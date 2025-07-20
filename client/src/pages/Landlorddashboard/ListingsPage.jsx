@@ -1,19 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
+import { getMyListings, deleteListing } from '../../../api';
 
 const ListingsPage = () => {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const landlordId = localStorage.getItem('landlordId');
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        const res = await axios.get(`/api/listings/landlord/${landlordId}`);
+        const res = await getMyListings();
         setListings(res.data);
       } catch (err) {
         console.error(err);
@@ -22,12 +21,8 @@ const ListingsPage = () => {
         setLoading(false);
       }
     };
-    if (landlordId) fetchListings();
-    else {
-      setLoading(false);
-      toast.error('Landlord ID not found in localStorage');
-    }
-  }, [landlordId]);
+    fetchListings();
+  }, []);
 
   const handleEdit = (listingId) => {
     navigate(`/landlord/edit-listing/${listingId}`);
@@ -36,7 +31,7 @@ const ListingsPage = () => {
   const handleDelete = async (listingId) => {
     if (window.confirm('Are you sure you want to delete this listing?')) {
       try {
-        await axios.delete(`/api/listings/${listingId}`);
+        await deleteListing(listingId);
         setListings((prev) => prev.filter((item) => item._id !== listingId));
         toast.success('Listing deleted successfully');
       } catch (err) {

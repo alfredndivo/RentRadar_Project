@@ -55,8 +55,8 @@ export const getMessagesWithUser = async (req, res) => {
     })
       .sort({ createdAt: -1 })
       .limit(50)
-      .populate('senderId', 'username profileImage')   // 🎯 Only select useful fields
-      .populate('receiverId', 'username profileImage');
+      .populate('senderId', 'name email')   // 🎯 Only select useful fields
+      .populate('receiverId', 'name email');
 
     res.json(messages.reverse());
   } catch (err) {
@@ -106,8 +106,8 @@ export const getRecentChats = async (req, res) => {
         $project: {
           user: {
             _id: '$user._id',
-            username: '$user.username',
-            profileImage: '$user.profileImage',
+            name: '$user.name',
+            email: '$user.email',
             role: '$user.role',
             isOnline: '$user.isOnline'
           },

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Send, MessageSquare, Search, Phone, Video, Clock } from 'lucide-react';
 import { toast } from 'sonner';
-import { getRecentChats, getMessagesWithUser, sendMessage } from '../../../api';
+import { getRecentChats, getMessagesWithUser, sendMessage, getCurrentUser } from '../../../api';
 import { MessageSkeleton } from '../../components/SkeletonLoader';
 
 const UserMessagesPage = () => {
@@ -13,7 +13,19 @@ const UserMessagesPage = () => {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const currentUser = JSON.parse(localStorage.getItem('user') || '{}');
+  const [currentUserId, setCurrentUserId] = useState(null);
+
+  useEffect(() => {
+    const fetchCurrentUser = async () => {
+      try {
+        const response = await getCurrentUser();
+        setCurrentUserId(response.data.profile.id || response.data.profile._id);
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      }
+    };
+    fetchCurrentUser();
+  }, []);
 
   useEffect(() => {
     fetchConversations();
@@ -215,19 +227,19 @@ const UserMessagesPage = () => {
                   <div
                     key={index}
                     className={`flex ${
-                      message.senderId === currentUser.id ? 'justify-end' : 'justify-start'
+                      message.senderId === currentUserId ? 'justify-end' : 'justify-start'
                     }`}
                   >
                     <div
                       className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                        message.senderId === currentUser.id
+                        message.senderId === currentUserId
                           ? 'bg-green-500 text-white'
                           : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                       }`}
                     >
                       <p>{message.text}</p>
                       <p className={`text-xs mt-1 ${
-                        message.senderId === currentUser.id ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
+                        message.senderId === currentUserId ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
                       }`}>
                         {new Date(message.createdAt).toLocaleTimeString([], {
                           hour: '2-digit',

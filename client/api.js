@@ -6,19 +6,18 @@ const API = axios.create({
 });
 
 // ----------------- AUTH -----------------
-export const registerUser = (data) => API.post('/user/register', data);
-export const loginUser = (data) => API.post('/user/login', data);
+export const registerUser = (data) => API.post('/auth/user/register', data);
+export const loginUser = (data) => API.post('/auth/user/login', data);
 
-export const registerLandlord = (data) => API.post('/landlord/register', data);
-export const loginLandlord = (data) => API.post('/landlord/login', data);
+export const registerLandlord = (data) => API.post('/auth/landlord/register', data);
+export const loginLandlord = (data) => API.post('/auth/landlord/login', data);
 
-export const loginAdmin = (data) => API.post('/admin/login', data);
+export const loginAdmin = (data) => API.post('/auth/admin/login', data);
 
 export const logoutUser = () => API.post('/auth/logout');
 export const getCurrentUser = () => API.get('/auth/profile');
-export const getProfile = () => API.get('/profile');
 export const updateLandlordProfile = (data) =>
-  API.put('/landlord/profile', data);
+  API.put('/auth/landlord/profile', data);
 export const updateUserProfile = (data) => API.put('/auth/me/update', data);
 
 // ----------------- LISTINGS -----------------
@@ -42,7 +41,7 @@ export const sendMessage = (data) => API.post('/messages', data);
 // ----------------- REPORTS -----------------
 
 export const submitReport = (data) => API.post('/reports', data);
-export const getUserReports = () => API.get('/reports');
+export const getUserReports = () => API.get('/reports/my');
 export const getAllReportsForAdmin = () => API.get('/admin/reports');
 
 // ----------------- OTHER -----------------

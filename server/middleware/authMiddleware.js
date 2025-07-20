@@ -13,17 +13,18 @@ export const protect = (requiredRole = null) => {
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      console.log('Decoded token:', decoded);
 
       let user;
       if (decoded.role === 'user') {
         user = await User.findById(decoded.id).select('-password');
-        user.role = 'user';
+        if (user) user.role = 'user';
       } else if (decoded.role === 'landlord') {
         user = await Landlord.findById(decoded.id).select('-password');
-        user.role = 'landlord';
+        if (user) user.role = 'landlord';
       } else if (decoded.role === 'admin' || decoded.role === 'superadmin') {
         user = await Admin.findById(decoded.id).select('-password');
-        user.role = decoded.role;
+        if (user) user.role = decoded.role;
       } else {
         return res.status(403).json({ message: 'Invalid role in token' });
       }

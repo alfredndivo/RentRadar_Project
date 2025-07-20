@@ -61,7 +61,7 @@ export const createListing = async (req, res) => {
       bedrooms,
       bathrooms,
       images: resizedPaths,
-      landlord: req.user.id,
+      landlord: req.user._id,
       lat: coords.lat,
       lng: coords.lng,
     });
@@ -109,7 +109,7 @@ export const getSingleListing = async (req, res) => {
 // 📌 GET all listings by current landlord
 export const getMyListings = async (req, res) => {
   try {
-    const listings = await Listing.find({ landlord: req.user.id }).sort({ createdAt: -1 });
+    const listings = await Listing.find({ landlord: req.user._id }).sort({ createdAt: -1 });
     res.json(listings);
   } catch (err) {
     res.status(500).json({ message: 'Failed to get your listings' });
@@ -122,7 +122,7 @@ export const updateListing = async (req, res) => {
     const listing = await Listing.findById(req.params.id);
     if (!listing) return res.status(404).json({ message: 'Listing not found' });
 
-    if (listing.landlord.toString() !== req.user.id) {
+    if (listing.landlord.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
@@ -133,7 +133,7 @@ export const updateListing = async (req, res) => {
     }
 
     if (updates.location) {
-      const coords = await getGeolocation(updates.location);
+      const coords = await getCoordinates(updates.location);
       updates.lat = coords.lat;
       updates.lng = coords.lng;
     }
@@ -154,7 +154,7 @@ export const deleteListing = async (req, res) => {
     const listing = await Listing.findById(req.params.id);
     if (!listing) return res.status(404).json({ message: 'Listing not found' });
 
-    if (listing.landlord.toString() !== req.user.id) {
+    if (listing.landlord.toString() !== req.user._id.toString()) {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
@@ -164,7 +164,7 @@ export const deleteListing = async (req, res) => {
       }
     }
 
-    await listing.remove();
+    await Listing.findByIdAndDelete(req.params.id);
     res.json({ message: 'Listing deleted' });
   } catch (err) {
     res.status(500).json({ message: 'Failed to delete listing' });
