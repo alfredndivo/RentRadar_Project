@@ -13,6 +13,7 @@ import reportRoutes from './routes/reportRoutes.js';
 import reviewRoutes from './routes/reviewRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import userRoutes from './routes/userRoutes.js';
 
 // Setup __dirname in ES6
 const __filename = fileURLToPath(import.meta.url);
@@ -25,13 +26,11 @@ dotenv.config();
 const app = express();
 
 // Middleware
-
 app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true,
 }));
 app.use(morgan('dev'));
-
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
@@ -42,6 +41,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/listings', listingRoutes);
+app.use('/api/user', userRoutes);
 app.use('/api/messages', messageRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/reviews', reviewRoutes);

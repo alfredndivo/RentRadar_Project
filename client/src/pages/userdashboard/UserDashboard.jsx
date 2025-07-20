@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom';
+import { Routes, Route, Link, useLocation, useNavigate, useOutletContext } from 'react-router-dom';
 import { 
   Menu, 
   X, 
@@ -22,24 +22,23 @@ import UserMessagesPage from './UserMessagesPage';
 import UserSavedListings from './UserSavedListings';
 import UserReportsPage from './UserReportsPage';
 import UserProfilePage from './UserProfilePage';
+import { logoutUser } from '../../../api';
 
 const UserDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const { user } = useOutletContext();
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const userData = localStorage.getItem('user');
-    if (userData) {
-      setUser(JSON.parse(userData));
+  const handleLogout = async () => {
+    try {
+      await logoutUser();
+      toast.success('Logged out successfully');
+      navigate('/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+      navigate('/auth');
     }
-  }, []);
-
-  const handleLogout = () => {
-    localStorage.removeItem('user');
-    toast.success('Logged out successfully');
-    navigate('/auth');
   };
 
   const navItems = [
@@ -61,20 +60,19 @@ const UserDashboard = () => {
     <div>
       <DarkModeToggle />
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
-       {/* Mobile Header */}
+        {/* Mobile Header */}
         <div className="lg:hidden bg-green-800 dark:bg-gray-800 text-white p-4 flex justify-between items-center">
-         <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3">
             <Home className="w-6 h-6 text-green-300" />
-           <h1 className="text-xl font-bold">RentRadar</h1>
+            <h1 className="text-xl font-bold">RentRadar</h1>
           </div>
-        </div>
-        <button
-          onClick={() => setSidebarOpen(!sidebarOpen)}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 hover:bg-green-700 dark:hover:bg-gray-700 rounded-lg transition-colors"
-        >
-          {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </div>
+          >
+            {sidebarOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
 
       {/* Mobile Sidebar Overlay */}
       {sidebarOpen && (
@@ -99,16 +97,16 @@ const UserDashboard = () => {
               <>
                 <ProfileCompletionBar user={user} userType="user" />
                 <div className="mb-8 p-4 bg-white dark:bg-gray-700 rounded-2xl shadow-sm border border-green-200 dark:border-gray-600">
-                <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                    <User className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
+                      <User className="w-5 h-5 text-white" />
+                    </div>
+                    <div>
                       <p className="font-medium text-gray-800 dark:text-white">{user.name}</p>
                       <p className="text-sm text-green-600 dark:text-green-400">Tenant</p>
+                    </div>
                   </div>
                 </div>
-              </div>
               </>
             )}
 
@@ -160,8 +158,7 @@ const UserDashboard = () => {
       
       <BottomNavBar userType="user" />
     </div>
-  
-  )
+  );
 };
 
 export default UserDashboard;

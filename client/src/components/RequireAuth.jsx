@@ -1,48 +1,47 @@
 import { Navigate, Outlet } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { getCurrentUser } from '../../api';
 
 const RequireAuth = ({ allowedRoles }) => {
-  // Check if user data exists in localStorage
-  const userData = localStorage.getItem('user');
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  if (!userData) {
-    console.log('❌ No user data found in localStorage');
-    // Clear any corrupted data
-    localStorage.clear();
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const response = await getCurrentUser();
+        const userData = response.data.profile;
+        
+        if (userData && allowedRoles.includes(userData.role)) {
+          setUser(userData);
+        } else {
+          setError(true);
+        }
+      } catch (err) {
+        console.error('❌ Auth check failed:', err);
+        setError(true);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
+  }, [allowedRoles]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
+      </div>
+    );
+  }
+
+  if (error || !user) {
     return <Navigate to="/auth" replace />;
   }
 
-  try {
-    const user = JSON.parse(userData);
-    const userRole = user.role;
-
-    console.log('✅ User data found:', { id: user.id, role: userRole });
-    console.log('✅ Allowed roles:', allowedRoles);
-
-    if (!userRole) {
-      console.log('❌ No role found in user data');
-      localStorage.clear();
-      return <Navigate to="/auth" replace />;
-    }
-
-    // Check if user object has required fields
-    if (!user.id && !user._id) {
-      console.log('❌ Invalid user data - missing ID');
-      localStorage.clear();
-      return <Navigate to="/auth" replace />;
-    }
-
-    if (!allowedRoles.includes(userRole)) {
-      console.log('❌ User role not allowed:', userRole);
-      return <Navigate to="/auth" replace />;
-    }
-
-    console.log('✅ Access granted for role:', userRole);
-    return <Outlet />;
-  } catch (err) {
-    console.error('❌ Auth error:', err);
-    localStorage.clear(); // Clear all corrupted data
-    return <Navigate to="/auth" replace />;
-  }
+  return <Outlet context={{ user }} />;
 };
 
 export default RequireAuth;

@@ -5,7 +5,8 @@ import { User, Mail, Lock, Phone, Eye, EyeOff } from 'lucide-react';
 import {registerUser,
   loginUser,
   registerLandlord,
-  loginLandlord} from '../../api';
+  loginLandlord,
+  loginAdmin} from '../../api';
 import DarkModeToggle from '../components/DarkModeToggle';
 
 const AuthPage = () => {
@@ -34,10 +35,6 @@ const AuthPage = () => {
     e.preventDefault();
     if (!role) return alert('Please select a role first');
 
-    if (role === 'admin' || role === 'superadmin') {
-      return alert('This role is not available for login or registration.');
-    }
-
     setLoading(true);
     try {
       let response;
@@ -47,9 +44,13 @@ const AuthPage = () => {
           response = await loginUser(formData);
         } else if (role === 'landlord') {
           response = await loginLandlord(formData);
+        } else if (role === 'admin') {
+          response = await loginAdmin(formData);
         }
       } else {
-        if (role === 'user') {
+        if (role === 'admin') {
+          return alert('Admin registration is not allowed. Please contact system administrator.');
+        } else if (role === 'user') {
           response = await registerUser(formData);
         } else if (role === 'landlord') {
           response = await registerLandlord(formData);
@@ -59,13 +60,10 @@ const AuthPage = () => {
       const data = response.data;
       console.log('Auth response:', data);
       
-      // Store user data in localStorage
+      // Navigate based on role
       if (role === 'user' && data.user) {
-        localStorage.setItem('user', JSON.stringify(data.user));
         navigate('/user/dashboard');
       } else if (role === 'landlord' && data.landlord) {
-        localStorage.setItem('user', JSON.stringify(data.landlord));
-        
         // Check if profile is complete
         const landlord = data.landlord;
         if (!landlord.idNumber || !landlord.location) {
@@ -73,6 +71,8 @@ const AuthPage = () => {
         } else {
           navigate('/landlord/dashboard');
         }
+      } else if (role === 'admin' && data.admin) {
+        navigate('/admin/dashboard');
       }
 
     } catch (err) {
@@ -106,6 +106,7 @@ const AuthPage = () => {
           <option value="">-- Select Role --</option>
           <option value="user">Tenant</option>
           <option value="landlord">Landlord</option>
+          {isLogin && <option value="admin">Admin</option>}
         </select>
 
         {role && (

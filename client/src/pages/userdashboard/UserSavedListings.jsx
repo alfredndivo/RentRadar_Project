@@ -24,10 +24,11 @@ const UserSavedListings = () => {
   const fetchSavedListings = async () => {
     try {
       const response = await getUserSavedListings();
-      setSavedListings(response.data);
+      setSavedListings(response.data || []);
     } catch (error) {
       console.error('Error fetching saved listings:', error);
-      toast.error('Failed to load saved listings');
+      // Don't show error for empty saved listings
+      setSavedListings([]);
     } finally {
       setLoading(false);
     }

@@ -44,11 +44,12 @@ const UserListingsPage = () => {
   const fetchListings = async () => {
     try {
       const response = await getAllListings();
-      setListings(response.data);
+      setListings(response.data || []);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching listings:', error);
       toast.error('Failed to load listings');
+      setListings([]);
       setLoading(false);
     }
   };

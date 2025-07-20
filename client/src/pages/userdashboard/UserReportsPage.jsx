@@ -16,10 +16,11 @@ const UserReportsPage = () => {
   const fetchReports = async () => {
     try {
       const response = await getUserReports();
-      setReports(response.data);
+      setReports(response.data || []);
     } catch (error) {
       console.error('Error fetching reports:', error);
-      toast.error('Failed to load reports');
+      // Don't show error for empty reports
+      setReports([]);
     } finally {
       setLoading(false);
     }

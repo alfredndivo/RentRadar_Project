@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { User, Mail, Phone, MapPin, Camera, Save } from 'lucide-react';
 import { toast } from 'sonner';
-import { getProfile, updateProfile } from '../../../api';
+import { getCurrentUser, updateUserProfile } from '../../../api';
 import { ProfileSkeleton } from '../../components/SkeletonLoader';
 import ProfileCompletionBar from '../../components/ProfileCompletionBar';
 
 const UserProfilePage = () => {
+  const { user: contextUser } = useOutletContext();
   const [profile, setProfile] = useState({
     name: '',
     email: '',
@@ -24,22 +26,30 @@ const UserProfilePage = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await getProfile();
-      setProfile(response.data);
-      if (response.data.photo) {
-        setPhotoPreview(response.data.photo);
+      const response = await getCurrentUser();
+      const userData = response.data.profile;
+      setProfile({
+        name: userData.name || '',
+        email: userData.email || '',
+        phone: userData.phone || '',
+        location: userData.location || '',
+        preferences: userData.preferences || '',
+        photo: userData.photo || null
+      });
+      if (userData.photo) {
+        setPhotoPreview(userData.photo);
       }
     } catch (error) {
       console.error('Error fetching profile:', error);
-      // Fallback to localStorage data
-      const userData = localStorage.getItem('user');
-      if (userData) {
-        const user = JSON.parse(userData);
+      // Fallback to context user data
+      if (contextUser) {
         setProfile(prev => ({
           ...prev,
-          name: user.name || '',
-          email: user.email || '',
-          phone: user.phone || ''
+          name: contextUser.name || '',
+          email: contextUser.email || '',
+          phone: contextUser.phone || '',
+          location: contextUser.location || '',
+          preferences: contextUser.preferences || ''
         }));
       }
     } finally {
@@ -76,14 +86,8 @@ const UserProfilePage = () => {
         }
       });
 
-      await updateProfile(formData);
+      await updateUserProfile(formData);
       toast.success('Profile updated successfully');
-      
-      // Update localStorage
-      const userData = JSON.parse(localStorage.getItem('user') || '{}');
-      const updatedUser = { ...userData, ...profile };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-      
     } catch (error) {
       console.error('Error updating profile:', error);
       toast.error('Failed to update profile');

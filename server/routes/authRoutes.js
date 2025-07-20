@@ -41,6 +41,17 @@ router.post('/admin/login', loginAdmin);
 
 // =============== PROTECTED ROUTES ===============
 router.get('/landlord/profile', protect, getMyProfile);
+router.get('/profile', protect, getMyProfile);
 router.put('/me/update',protect, updateProfile);
+
+// =============== LOGOUT ===============
+router.post('/logout', (req, res) => {
+  res.clearCookie('token', {
+    httpOnly: true,
+    sameSite: 'Lax',
+    secure: process.env.NODE_ENV === 'production',
+  });
+  res.json({ message: 'Logged out successfully' });
+});
 
 export default router;

@@ -29,7 +29,7 @@ export const registerUser = async (req, res) => {
     const token = generateToken({ id: user._id, role: 'user' });
     res.cookie('token',token,{
       httpOnly:true,
-      secure:false,
+      secure: process.env.NODE_ENV === 'production',
       sameSite:'Lax',
       maxAge:24*60*60*1000,
     })
@@ -40,6 +40,9 @@ export const registerUser = async (req, res) => {
         name:user.name,
         email:user.email,
         phone:user.phone,
+        photo: user.photo,
+        preferences: user.preferences,
+        location: user.location,
         role:'user',
       },
     });
@@ -61,7 +64,7 @@ export const loginUser = async (req, res) => {
     const token = generateToken({ id: user._id, role: 'user' });
     res.cookie('token',token,{
       httpOnly:true,
-      secure:false,
+      secure: process.env.NODE_ENV === 'production',
       sameSite:'Lax',
       maxAge:24*60*60*1000,
     })
@@ -72,6 +75,9 @@ export const loginUser = async (req, res) => {
         name:user.name,
         email:user.email,
         phone:user.phone,
+        photo: user.photo,
+        preferences: user.preferences,
+        location: user.location,
         role:'user',
       },
     });
@@ -96,7 +102,7 @@ export const registerLandlord = async (req, res) => {
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'Lax',
       maxAge: 24 * 60 * 60 * 1000,
     });
@@ -134,7 +140,7 @@ export const loginLandlord = async (req, res) => {
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: false,
+      secure: process.env.NODE_ENV === 'production',
       sameSite: 'Lax',
       maxAge: 24 * 60 * 60 * 1000,
     });
@@ -172,7 +178,7 @@ export const loginAdmin = async (req, res) => {
     const token = generateToken({ id: admin._id, role: 'admin' });
     res.cookie('token',token,{
       httpOnly:true,
-      secure:false,
+      secure: process.env.NODE_ENV === 'production',
       sameSite:'Lax',
       maxAge:24*60*60*1000,
     })
