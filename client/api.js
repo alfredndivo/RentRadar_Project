@@ -14,12 +14,12 @@ export const loginLandlord = (data) => API.post('/landlord/login', data);
 
 export const loginAdmin = (data) => API.post('/admin/login', data);
 
-export const logoutUser = () => API.post('/auth/logout');
-export const getCurrentUser = () => API.get('/auth/profile');
+export const logoutUser = () => API.post('/logout');
+export const getCurrentUser = () => API.get('/profile');
 export const getProfile = () => API.get('/profile');
 export const updateLandlordProfile = (data) =>
   API.put('/landlord/profile', data);
-export const updateUserProfile = (data) => API.put('/auth/me/update', data);
+export const updateUserProfile = (data) => API.put('/me/update', data);
 
 // ----------------- LISTINGS -----------------
 
@@ -47,6 +47,6 @@ export const getAllReportsForAdmin = () => API.get('/admin/reports');
 
 // ----------------- OTHER -----------------
 
-export const updateProfile = (data) => API.put('/auth/me/update', data);
+export const updateProfile = (data) => API.put('/me/update', data);
 
 export default API;
