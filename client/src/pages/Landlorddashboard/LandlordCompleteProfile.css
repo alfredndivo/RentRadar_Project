@@ -1,0 +1,68 @@
+/* src/styles/LandlordCompleteProfile.css */
+
+.landlord-profile-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 92vh;
+  background-color: #fdf4e3;
+  padding: 2rem;
+}
+
+.landlord-profile-card {
+  background-color: #fff2e1;
+  border-radius: 16px;
+  box-shadow: 0 0 20px rgba(255, 102, 0, 0.2);
+  padding: 2rem;
+  max-width: 500px;
+  width: 100%;
+}
+
+.landlord-profile-card h2 {
+  color: #ff6600;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.landlord-profile-form .form-group {
+  margin-bottom: 1.2rem;
+}
+
+.landlord-profile-form label {
+  display: block;
+  margin-bottom: 6px;
+  color: #333;
+  font-weight: 500;
+}
+
+.landlord-profile-form input[type="text"],
+.landlord-profile-form input[type="email"],
+.landlord-profile-form input[type="file"] {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ffaa66;
+  border-radius: 8px;
+  background-color: #fffefb;
+  transition: border 0.3s ease;
+}
+
+.landlord-profile-form input:focus {
+  outline: none;
+  border-color: #ff6600;
+}
+
+.landlord-profile-form button {
+  width: 100%;
+  background-color: #ff6600;
+  color: #fff;
+  border: none;
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.3s ease;
+  font-weight: 600;
+}
+
+.landlord-profile-form button:hover {
+  background-color: #e25800;
+}
