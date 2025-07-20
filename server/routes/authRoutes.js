@@ -40,7 +40,6 @@ router.put(
 router.post('/admin/login', loginAdmin);
 
 // =============== PROTECTED ROUTES ===============
-router.get('/landlord/profile', protect, getMyProfile);
 router.get('/profile', protect, getMyProfile);
 router.put('/me/update', protect, updateProfile);
 
