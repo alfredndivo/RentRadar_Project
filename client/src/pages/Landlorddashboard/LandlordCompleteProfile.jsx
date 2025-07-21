@@ -141,14 +141,14 @@ const LandlordCompleteProfile = () => {
                       type="file"
                       name="nationalIdPhoto"
                       accept="image/*"
-                      onChange={handleChange}
+                      alt="Profile Preview"
                       className="hidden"
                     />
                   </label>
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">National ID Photo</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-300">Upload your national ID for verification (optional)</p>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Profile Photo</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">Upload your profile photo (optional)</p>
                 </div>
               </div>
 
@@ -250,7 +250,7 @@ const LandlordCompleteProfile = () => {
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <Save className="w-5 h-5" />
-                  )}
+                      <User className="w-12 h-12 text-gray-400 dark:text-gray-500" />
                   {loading ? 'Saving...' : 'Complete Profile'}
                 </button>
               </div>

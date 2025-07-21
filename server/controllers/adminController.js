@@ -28,16 +28,6 @@ export const toggleUserStatus = async (req, res) => {
   }
 };
 
-// ⚠️ [ADMIN] Get flagged listings or users
-export const getReports = async (req, res) => {
-  try {
-    const reports = await Report.find().populate('reportedBy listingId');
-    res.json(reports);
-  } catch (err) {
-    res.status(500).json({ message: 'Error fetching reports' });
-  }
-};
-
 // 🗑️ [ADMIN] Delete a reported listing
 export const deleteListing = async (req, res) => {
   try {

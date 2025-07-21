@@ -65,9 +65,22 @@ const UserSavedListings = () => {
   };
 
   const openLightbox = (images, index = 0) => {
-    setLightboxImages(images);
+    const fullImageUrls = images.map(img => getImageUrl(img));
+    setLightboxImages(fullImageUrls);
     setLightboxIndex(index);
     setLightboxOpen(true);
+  };
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return "/placeholder.png";
+    
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    if (imagePath.startsWith('uploads/')) {
+      return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/${imagePath}`;
+    }
+    
+    return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/listings/${imagePath}`;
   };
 
   if (loading) {

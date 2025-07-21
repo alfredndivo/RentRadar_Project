@@ -1,8 +1,22 @@
 import React, { useState } from 'react';
-import { X, MapPin, Bed, Bath, Heart, MessageCircle, Share2, Calendar } from 'lucide-react';
+import { X, MapPin, Bed, Bath, Heart, MessageCircle, Share2, Calendar, Phone, Mail } from 'lucide-react';
+import { toast } from 'sonner';
+import LocationMap from '../../components/LocationMap';
 
 const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return "/placeholder.png";
+    
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    if (imagePath.startsWith('uploads/')) {
+      return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/${imagePath}`;
+    }
+    
+    return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/listings/${imagePath}`;
+  };
 
   const nextImage = () => {
     setCurrentImageIndex((prev) => 
@@ -14,6 +28,39 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
     setCurrentImageIndex((prev) => 
       prev === 0 ? listing.images.length - 1 : prev - 1
     );
+  };
+
+  const handleShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: listing.title,
+        text: `Check out this property: ${listing.title} in ${listing.location}`,
+        url: window.location.href,
+      }).catch(console.error);
+    } else {
+      // Fallback to copying to clipboard
+      navigator.clipboard.writeText(window.location.href).then(() => {
+        toast.success('Link copied to clipboard!');
+      }).catch(() => {
+        toast.error('Failed to copy link');
+      });
+    }
+  };
+
+  const handleCall = () => {
+    if (listing.landlord?.phone) {
+      window.location.href = `tel:${listing.landlord.phone}`;
+    } else {
+      toast.error('Phone number not available');
+    }
+  };
+
+  const handleEmail = () => {
+    if (listing.landlord?.email) {
+      window.location.href = `mailto:${listing.landlord.email}?subject=Inquiry about ${listing.title}&body=Hi, I'm interested in your property "${listing.title}" located at ${listing.location}. Could you please provide more details?`;
+    } else {
+      toast.error('Email not available');
+    }
   };
 
   return (
@@ -169,10 +216,34 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
                     {isSaved ? 'Saved' : 'Save'}
                   </button>
 
-                  <button className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-2 px-4 rounded-xl hover:bg-gray-200 transition-colors">
+                  <button 
+                    onClick={handleShare}
+                    className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-2 px-4 rounded-xl hover:bg-gray-200 transition-colors"
+                  >
                     <Share2 className="w-4 h-4" />
                     Share
                   </button>
+                </div>
+
+                {/* Alternative Contact Methods */}
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <p className="text-sm text-gray-600 mb-3">Or contact directly:</p>
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={handleCall}
+                      className="flex-1 flex items-center justify-center gap-2 bg-blue-100 text-blue-600 py-2 px-3 rounded-lg hover:bg-blue-200 transition-colors text-sm"
+                    >
+                      <Phone className="w-4 h-4" />
+                      Call
+                    </button>
+                    <button 
+                      onClick={handleEmail}
+                      className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-2 px-3 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+                    >
+                      <Mail className="w-4 h-4" />
+                      Email
+                    </button>
+                  </div>
                 </div>
               </div>
 

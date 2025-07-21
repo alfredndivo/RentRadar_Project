@@ -54,11 +54,19 @@ export const submitReport = async (req, res) => {
 export const getAllReports = async (req, res) => {
   try {
     const reports = await Report.find()
-      .populate('reportedBy', 'username role email')
+      .populate('reportedBy', 'name email role')
+      .populate({
+        path: 'targetId',
+        select: 'title name email',
+        model: function(doc) {
+          return doc.targetType === 'listing' ? 'Listing' : 'User';
+        }
+      })
       .sort({ createdAt: -1 });
 
     res.json(reports);
   } catch (err) {
+    console.error('Error fetching reports:', err);
     res.status(500).json({ message: 'Failed to fetch reports' });
   }
 };

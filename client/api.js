@@ -49,7 +49,10 @@ export const sendMessage = (data) => API.post('/messages', data);
 
 export const submitReport = (data) => API.post('/reports', data);
 export const getUserReports = () => API.get('/reports/my');
-export const getAllReportsForAdmin = () => API.get('/auth/admin/reports');
+export const getAllReportsForAdmin = () => API.get('/reports');
+
+// Fix the admin reports endpoint
+export const getAdminReports = () => API.get('/reports');
 
 // ----------------- OTHER -----------------
 

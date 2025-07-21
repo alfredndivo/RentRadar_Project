@@ -15,10 +15,12 @@ const AdminReportsPage = () => {
     const fetchAllReports = async () => {
       try {
         const res = await getAllReportsForAdmin();
+        console.log('Admin reports response:', res.data);
         setReports(res.data || []);
       } catch (error) {
         console.error("Error fetching reports", error);
         toast.error('Failed to load reports');
+        setReports([]);
       } finally {
         setLoading(false);
       }

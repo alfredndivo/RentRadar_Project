@@ -120,9 +120,26 @@ const UserListingsPage = () => {
   };
 
   const openLightbox = (images, index = 0) => {
-    setLightboxImages(images);
+    // Convert image paths to full URLs
+    const fullImageUrls = images.map(img => getImageUrl(img));
+    setLightboxImages(fullImageUrls);
     setLightboxIndex(index);
     setLightboxOpen(true);
+  };
+
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return "/placeholder.png";
+    
+    // If it's already a full URL, return as is
+    if (imagePath.startsWith('http')) return imagePath;
+    
+    // If it starts with uploads/, use it directly
+    if (imagePath.startsWith('uploads/')) {
+      return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/${imagePath}`;
+    }
+    
+    // Otherwise, assume it's in uploads/listings/
+    return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/listings/${imagePath}`;
   };
 
   if (loading) {
@@ -250,10 +267,13 @@ const UserListingsPage = () => {
             {/* Image */}
             <div className="relative h-48 overflow-hidden">
               <img
-                src={listing.images?.[0] || '/api/placeholder/400/300'}
+                src={getImageUrl(listing.images?.[0])}
                 alt={listing.title}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 onClick={() => listing.images && listing.images.length > 0 && openLightbox(listing.images, 0)}
+                onError={(e) => {
+                  e.target.src = "/placeholder.png";
+                }}
               />
               {/* Verified Badge */}
               {listing.landlord?.badge && (

@@ -123,11 +123,17 @@ const ContactLandlordModal = ({ listing, onClose }) => {
           <div className="mt-6 pt-6 border-t border-gray-200">
             <p className="text-sm text-gray-600 mb-3">Or contact directly:</p>
             <div className="flex gap-2">
-              <button className="flex-1 flex items-center justify-center gap-2 bg-blue-100 text-blue-600 py-2 px-3 rounded-lg hover:bg-blue-200 transition-colors text-sm">
+              <button 
+                onClick={handleCall}
+                className="flex-1 flex items-center justify-center gap-2 bg-blue-100 text-blue-600 py-2 px-3 rounded-lg hover:bg-blue-200 transition-colors text-sm"
+              >
                 <Phone className="w-4 h-4" />
                 Call
               </button>
-              <button className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-2 px-3 rounded-lg hover:bg-gray-200 transition-colors text-sm">
+              <button 
+                onClick={handleEmail}
+                className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-2 px-3 rounded-lg hover:bg-gray-200 transition-colors text-sm"
+              >
                 <Mail className="w-4 h-4" />
                 Email
               </button>
