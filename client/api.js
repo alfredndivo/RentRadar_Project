@@ -22,7 +22,7 @@ export const loginLandlord = (data) => API.post('/auth/landlord/login', data);
 export const loginAdmin = (data) => API.post('/auth/admin/login', data);
 
 export const logoutUser = () => API.post('/auth/logout');
-export const getCurrentUser = () => API.get('/auth/profile');
+export const getCurrentUser = () => API.get('/auth/current-user');
 export const updateLandlordProfile = (data) =>
   API.put('/auth/landlord/profile', data);
 export const updateUserProfile = (data) => API.put('/auth/user/profile', data);
@@ -75,6 +75,6 @@ export const deleteAdminListing = (listingId) => API.delete(`/admin/listings/${l
 // ----------------- OTHER -----------------
 
 export const updateProfile = (data) => API.put('/me/update', data);
-export const updateUserProfile = (data) => API.put('/auth/me/update', data);
+// export const updateUserProfile = (data) => API.put('/auth/me/update', data);
 
 export default API;

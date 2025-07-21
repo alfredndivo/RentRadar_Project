@@ -323,3 +323,39 @@ export const resetPassword = async (req, res) => {
     res.status(500).json({ message: 'Reset failed', error: err.message });
   }
 };
+
+
+
+export const getCurrentUser = async (req, res) => {
+  try {
+    const { role, _id } = req.user;
+    console.log('getCurrentUser called');
+    console.log('Role:', role);
+    console.log('User ID:', _id);
+
+    let user;
+
+    if (role === 'user') {
+      user = await User.findById(_id).select('-password');
+    } else if (role === 'landlord') {
+      user = await Landlord.findById(_id).select('-password');
+    } else if (role === 'admin' || role === 'superadmin') {
+      user = await Admin.findById(_id).select('-password');
+    }
+
+    if (!user) {
+      console.log('User not found in controller for role:', role, 'ID:', _id);
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    return res.status(200).json({
+      user: {
+        ...user._doc,
+        role: role,
+      },
+    });
+  } catch (error) {
+    console.error('Get current user failed:', error);
+    return res.status(500).json({ message: 'Server error' });
+  }
+};

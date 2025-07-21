@@ -6,7 +6,7 @@ import UserDashboard from './pages/userdashboard/UserDashboard';
 import LandlordDashboard from './pages/Landlorddashboard/Landlorddashboard';
 
 import LandlordListingsPage from './pages/Landlorddashboard/ListingsPage';
-import LandlordMessagesPage from './pages/LandlordDashboard/LandlordMessagesPage';
+import LandlordMessagesPage from './pages/Landlorddashboard/LandlordMessagesPage';
 import LandlordReportsPage from './pages/LandlordDashboard/LandlordReportsPage';
 import LandlordCompleteProfile from './pages/Landlorddashboard/LandlordCompleteProfile';
 

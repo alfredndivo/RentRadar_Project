@@ -9,6 +9,7 @@ import {
   loginAdmin,
   forgotPassword,
   resetPassword,
+  getCurrentUser,
   getMyProfile,
   updateProfile,
 } from '../controllers/authController.js';
@@ -38,6 +39,9 @@ router.put(
 
 // =============== ADMIN ===============
 router.post('/admin/login', loginAdmin);
+// ✅ NEW: Get current user (admin, landlord, or user)
+router.get('/current-user', protect(), getCurrentUser);
+
 
 // =============== PROTECTED ROUTES ===============
 router.get('/profile', protect(), getMyProfile);
