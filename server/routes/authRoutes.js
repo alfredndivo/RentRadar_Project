@@ -48,8 +48,9 @@ router.put('/me/update', protect(), upload.single('photo'), updateProfile);
 router.post('/logout', (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
-    sameSite: 'Lax',
-    secure: false,
+    sameSite: 'None',
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 24 * 60 * 60 * 1000
   });
   res.json({ message: 'Logged out successfully' });
 });

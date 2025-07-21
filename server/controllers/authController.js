@@ -29,9 +29,9 @@ export const registerUser = async (req, res) => {
     const token = generateToken({ id: user._id, role: 'user' });
     res.cookie('token',token,{
       httpOnly:true,
-      secure: false, // Set to true in production
-      sameSite:'Lax',
-      maxAge:24*60*60*1000,
+      secure: process.env.NODE_ENV === 'production', // Set to true in production
+      sameSite:'None',
+      maxAge: 24 * 60 * 60 * 1000
     })
     .status(201).json({
       message:'User registered successfully',
@@ -64,9 +64,9 @@ export const loginUser = async (req, res) => {
     const token = generateToken({ id: user._id, role: 'user' });
     res.cookie('token',token,{
       httpOnly:true,
-      secure: false,
-      sameSite:'Lax',
-      maxAge:24*60*60*1000,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite:'None',
+      maxAge: 24 * 60 * 60 * 1000
     })
     .status(200).json({
       message:'User logged in successfully',
@@ -102,8 +102,8 @@ export const registerLandlord = async (req, res) => {
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: false,
-      sameSite: 'Lax',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'None',
       maxAge: 24 * 60 * 60 * 1000,
     });
 
@@ -140,8 +140,8 @@ export const loginLandlord = async (req, res) => {
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: false, // Set to true in production
-      sameSite: 'Lax',
+      secure: process.env.NODE_ENV === 'production', // Set to true in production
+      sameSite: 'None',
       maxAge: 24 * 60 * 60 * 1000,
     });
 
@@ -178,9 +178,9 @@ export const loginAdmin = async (req, res) => {
     const token = generateToken({ id: admin._id, role: admin.superAdmin ? 'superadmin' : 'admin' });
     res.cookie('token',token,{
       httpOnly:true,
-      secure: false,
-      sameSite:'Lax',
-      maxAge:24*60*60*1000,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite:'None',
+      maxAge: 24 * 60 * 60 * 1000
     })
     .status(200).json({
       message:'Admin logged in successfully',
