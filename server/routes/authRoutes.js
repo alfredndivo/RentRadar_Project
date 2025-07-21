@@ -15,7 +15,7 @@ import {
 
 import {protect}  from '../middleware/authMiddleware.js';
 import upload from '../middleware/upload.js';
-
+ 
 // =============== USERS ===============
 router.post('/user/register', registerUser);
 router.post('/user/login', loginUser);
@@ -40,15 +40,15 @@ router.put(
 router.post('/admin/login', loginAdmin);
 
 // =============== PROTECTED ROUTES ===============
-router.get('/profile', protect, getMyProfile);
-router.put('/me/update', protect, updateProfile);
+router.get('/profile', protect(), getMyProfile);
+router.put('/me/update', protect(), updateProfile);
 
 // =============== LOGOUT ===============
 router.post('/logout', (req, res) => {
   res.clearCookie('token', {
     httpOnly: true,
     sameSite: 'Lax',
-    secure: process.env.NODE_ENV === 'production',
+    secure: false,
   });
   res.json({ message: 'Logged out successfully' });
 });

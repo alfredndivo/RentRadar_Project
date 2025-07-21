@@ -12,15 +12,15 @@ const router = express.Router();
 // 💌 Send message (with optional image)
 router.post(
   '/',
-  protect,
+  protect(),
   uploadMessageImage.single('image'),
   sendMessage
 );
 
 // 💬 Get conversation with another user
-router.get('/:userId', protect, getMessagesWithUser);
+router.get('/:userId', protect(), getMessagesWithUser);
 
 // 📥 Get recent chat previews
-router.get('/recent', protect, getRecentChats);
+router.get('/recent', protect(), getRecentChats);
 
 export default router;

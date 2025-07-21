@@ -5,6 +5,7 @@ import Admin from '../models/Admin.js';
 
 export const protect = (requiredRole = null) => {
   return async (req, res, next) => {
+    console.log('Protect middleware hit');
     try {
       const token = req.cookies?.token;
 

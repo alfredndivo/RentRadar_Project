@@ -11,20 +11,23 @@ import axios from 'axios';
  */
 export const getCoordinates = async (address) => {
   const encoded = encodeURIComponent(address);
-  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encoded}&key=${process.env.GOOGLE_MAPS_API_KEY}`;
+  const url = `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`;
 
   try {
-    const res = await axios.get(url);
-    const result = res.data.results[0];
-    if (!result) return null;
+    const res = await axios.get(url, {
+      headers: { 'User-Agent': 'RentRadarApp/1.0 (your@email.com)' },
+    });
 
-    const { lat, lng } = result.geometry.location;
-    return { lat, lng };
+    if (!res.data.length) return null;
+
+    const { lat, lon } = res.data[0];
+    return { lat: parseFloat(lat), lng: parseFloat(lon) };
   } catch (err) {
     console.error('❌ Geocoding failed:', err.message);
     return null;
   }
 };
+
 
 /**
  * 📏 Calculate straight-line distance between two geo-points using Haversine formula

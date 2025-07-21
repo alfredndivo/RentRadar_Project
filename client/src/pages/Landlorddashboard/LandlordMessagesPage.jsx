@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
+import API from '../../../api'
 import { MessageSquare, SendHorizonal } from "lucide-react";
-// import { useAuth } from "../../hooks/useAuth"; // adjust if your hook is elsewhere
 
 const LandlordMessagesPage = () => {
-  const user = JSON.parse(localStorage.getItem("user"));
+  const [user, setuser] = useState("")
   const [threads, setThreads] = useState([]);
   const [activeThread, setActiveThread] = useState(null);
   const [messages, setMessages] = useState([]);
@@ -13,7 +12,7 @@ const LandlordMessagesPage = () => {
   useEffect(() => {
     const fetchThreads = async () => {
       try {
-        const res = await axios.get(`/api/messages/threads/landlord/${user._id}`);
+        const res = await API.get(`/api/messages/threads/landlord/${user._id}`);
         setThreads(res.data);
       } catch (err) {
         console.error(err);
@@ -24,7 +23,7 @@ const LandlordMessagesPage = () => {
 
   const loadMessages = async (threadId) => {
     try {
-      const res = await axios.get(`/api/messages/thread/${threadId}`);
+      const res = await API.get(`/api/messages/thread/${threadId}`);
       setMessages(res.data.messages);
       setActiveThread(res.data.threadId);
     } catch (err) {
@@ -35,7 +34,7 @@ const LandlordMessagesPage = () => {
   const handleSend = async () => {
     if (!newMessage.trim()) return;
     try {
-      const res = await axios.post("/api/messages/send", {
+      const res = await API.post("/api/messages/send", {
         threadId: activeThread,
         senderId: user._id,
         message: newMessage,

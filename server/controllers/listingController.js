@@ -9,7 +9,6 @@ const houseTypes = [
   'Maisonette', 'Bungalow', 'Apartment', 'Penthouse', 'Hostel Room',
   'Servant Quarter', 'Shared Room', 'Townhouse', 'Villa'
 ];
-
 // 📌 CREATE new listing
 export const createListing = async (req, res) => {
   try {
@@ -49,8 +48,17 @@ export const createListing = async (req, res) => {
       fs.unlinkSync(inputPath); // delete original
       resizedPaths.push(outputPath);
     }
+         let coords = await getCoordinates(location);
 
-    const coords = await getCoordinates(location); // { lat, lng }
+          // 🔁 Retry with ", Kenya" if not found and not already present
+          if ((!coords || coords.lat == null || coords.lng == null) && !location.toLowerCase().includes('kenya')) {
+              coords = await getCoordinates(`${location}, Kenya`);
+          }
+
+          if (!coords || coords.lat == null || coords.lng == null) {
+              return res.status(400).json({ message: 'Failed to fetch coordinates for location' });
+   }
+
 
     const newListing = new Listing({
       title,
@@ -73,6 +81,7 @@ export const createListing = async (req, res) => {
     res.status(500).json({ message: 'Failed to create listing' });
   }
 };
+
 
 // 📌 GET all listings with optional filters
 export const getAllListings = async (req, res) => {

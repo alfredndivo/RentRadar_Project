@@ -30,11 +30,16 @@ app.use(cors({
   origin: 'http://localhost:5173',
   credentials: true,
 }));
+
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
+app.use((req, res, next) => {
+  console.log('Incoming:', req.method, req.originalUrl);
+  next();
+});
 // Static image serving
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
@@ -48,6 +53,10 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 
+app.use((req, res) => {
+  console.log('404 Not Found:', req.method, req.originalUrl);
+  res.status(404).json({ message: 'Route not found' });
+});
 // DB connect
 mongoose
   .connect(process.env.MONGO_URI)

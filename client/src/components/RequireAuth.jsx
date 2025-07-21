@@ -11,15 +11,15 @@ const RequireAuth = ({ allowedRoles }) => {
     const checkAuth = async () => {
       try {
         const response = await getCurrentUser();
-        const userData = response.data.profile;
-        
-        console.log('Auth check response:', userData);
-        
-        if (userData && allowedRoles.includes(userData.role)) {
-          setUser(userData);
+        const { profile, role } = response.data;
+
+        console.log('Auth check response:', profile, role);
+
+        if (profile && allowedRoles.includes(role)) {
+          setUser(profile);
           setError(false);
         } else {
-          console.log('User role not allowed:', userData?.role, 'Allowed:', allowedRoles);
+          console.log('User role not allowed:', role, 'Allowed:', allowedRoles);
           setError(true);
         }
       } catch (err) {

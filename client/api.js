@@ -3,9 +3,16 @@ import axios from 'axios';
 const API = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api',
   withCredentials: true,
+  headers: {
+    'Cache-Control': 'no-cache',
+    Pragma: 'no-cache',
+    Expires: '0',
+    // 'Content-Type': 'multipart/form-data',
+  },
 });
 
-// ----------------- AUTH -----------------
+
+/// ----------------- AUTH -----------------
 export const registerUser = (data) => API.post('/auth/user/register', data);
 export const loginUser = (data) => API.post('/auth/user/login', data);
 
@@ -18,7 +25,7 @@ export const logoutUser = () => API.post('/auth/logout');
 export const getCurrentUser = () => API.get('/auth/profile');
 export const updateLandlordProfile = (data) =>
   API.put('/auth/landlord/profile', data);
-export const updateUserProfile = (data) => API.put('/auth/me/update', data);
+export const updateUserProfile = (data) => API.put('/auth/user/profile', data);
 
 // ----------------- LISTINGS -----------------
 
@@ -42,10 +49,10 @@ export const sendMessage = (data) => API.post('/messages', data);
 
 export const submitReport = (data) => API.post('/reports', data);
 export const getUserReports = () => API.get('/reports/my');
-export const getAllReportsForAdmin = () => API.get('/admin/reports');
+export const getAllReportsForAdmin = () => API.get('/auth/admin/reports');
 
 // ----------------- OTHER -----------------
 
-export const updateProfile = (data) => API.put('/auth/me/update', data);
+export const updateProfile = (data) => API.put('/me/update', data);
 
 export default API;

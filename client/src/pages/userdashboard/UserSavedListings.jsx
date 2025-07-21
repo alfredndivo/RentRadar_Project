@@ -1,11 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { Heart, Eye, MessageCircle, Trash2, MapPin, Bed, Bath } from 'lucide-react';
-import { toast } from 'sonner';
-import { getUserSavedListings, unsaveListing } from '../../../api';
-import { ListingSkeleton } from '../../components/SkeletonLoader';
-import ImageLightbox from '../../components/ImageLightbox';
-import ListingDetailsModal from './ListingDetailsModal';
-import ContactLandlordModal from './ContactLandlordModal';
+import React, { useState, useEffect } from "react";
+import {
+  Heart,
+  Eye,
+  MessageCircle,
+  Trash2,
+  MapPin,
+  Bed,
+  Bath,
+} from "lucide-react";
+import { toast } from "sonner";
+import { getUserSavedListings, unsaveListing } from "../../../api";
+import { ListingSkeleton } from "../../components/SkeletonLoader";
+import ImageLightbox from "../../components/ImageLightbox";
+import ListingDetailsModal from "./ListingDetailsModal";
+import ContactLandlordModal from "./ContactLandlordModal";
 
 const UserSavedListings = () => {
   const [savedListings, setSavedListings] = useState([]);
@@ -26,7 +34,7 @@ const UserSavedListings = () => {
       const response = await getUserSavedListings();
       setSavedListings(response.data || []);
     } catch (error) {
-      console.error('Error fetching saved listings:', error);
+      console.error("Error fetching saved listings:", error);
       // Don't show error for empty saved listings
       setSavedListings([]);
     } finally {
@@ -37,10 +45,12 @@ const UserSavedListings = () => {
   const handleUnsaveListing = async (listingId) => {
     try {
       await unsaveListing(listingId);
-      setSavedListings(prev => prev.filter(listing => listing._id !== listingId));
-      toast.success('Listing removed from saved');
+      setSavedListings((prev) =>
+        prev.filter((listing) => listing._id !== listingId)
+      );
+      toast.success("Listing removed from saved");
     } catch (error) {
-      toast.error('Failed to remove listing');
+      toast.error("Failed to remove listing");
     }
   };
 
@@ -80,8 +90,12 @@ const UserSavedListings = () => {
     <div className="space-y-6">
       {/* Header */}
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-green-100 dark:border-gray-700">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Saved Listings</h1>
-        <p className="text-gray-600 dark:text-gray-300">Properties you've saved for later</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+          Saved Listings
+        </h1>
+        <p className="text-gray-600 dark:text-gray-300">
+          Properties you've saved for later
+        </p>
       </div>
 
       {/* Saved Listings */}
@@ -90,10 +104,14 @@ const UserSavedListings = () => {
           <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <Heart className="w-12 h-12 text-gray-400 dark:text-gray-500" />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">No saved listings yet</h3>
-          <p className="text-gray-600 dark:text-gray-300 mb-6">Start browsing properties and save your favorites</p>
+          <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">
+            No saved listings yet
+          </h3>
+          <p className="text-gray-600 dark:text-gray-300 mb-6">
+            Start browsing properties and save your favorites
+          </p>
           <button
-            onClick={() => window.location.href = '/user/dashboard'}
+            onClick={() => (window.location.href = "/user/dashboard")}
             className="bg-green-500 text-white px-6 py-3 rounded-xl hover:bg-green-600 transition-colors"
           >
             Browse Properties
@@ -102,15 +120,40 @@ const UserSavedListings = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {savedListings.map((listing) => (
-            <div key={listing._id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group border border-green-100 dark:border-gray-700">
+            <div
+              key={listing._id}
+              className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group border border-green-100 dark:border-gray-700"
+            >
               {/* Image */}
               <div className="relative h-48 overflow-hidden">
+                {console.log(
+                  `Listing ID: ${listing._id}, Image URL: ${
+                    listing.images?.[0]
+                      ? `${import.meta.env.VITE_API_BASE_URL.replace(
+                          "/api",
+                          ""
+                        )}/${listing.images[0]}`
+                      : "/placeholder.png"
+                  }`
+                )}
                 <img
-                  src={listing.images?.[0] || '/api/placeholder/400/300'}
+                  src={
+                    listing.images?.[0]
+                      ? `${import.meta.env.VITE_API_BASE_URL.replace(
+                          "/api",
+                          ""
+                        )}/${listing.images[0]}`
+                      : "/placeholder.png"
+                  }
                   alt={listing.title}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  onClick={() => listing.images && listing.images.length > 0 && openLightbox(listing.images, 0)}
+                  className="w-full h-full object-cover"
+                  onClick={() =>
+                    listing.images &&
+                    listing.images.length > 0 &&
+                    openLightbox(listing.images, 0)
+                  }
                 />
+
                 <button
                   onClick={() => handleUnsaveListing(listing._id)}
                   className="absolute top-3 right-3 p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
@@ -122,7 +165,9 @@ const UserSavedListings = () => {
               {/* Content */}
               <div className="p-6">
                 <div className="flex items-start justify-between mb-2">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1">{listing.title}</h3>
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-1">
+                    {listing.title}
+                  </h3>
                   <span className="text-xl font-bold text-green-600 dark:text-green-400">
                     KES {listing.price?.toLocaleString()}
                   </span>
@@ -134,7 +179,9 @@ const UserSavedListings = () => {
                 </div>
 
                 <div className="flex items-center gap-4 text-sm text-gray-600 dark:text-gray-300 mb-3">
-                  <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-lg">{listing.houseType}</span>
+                  <span className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 px-2 py-1 rounded-lg">
+                    {listing.houseType}
+                  </span>
                   {listing.bedrooms > 0 && (
                     <div className="flex items-center gap-1">
                       <Bed className="w-4 h-4" />
@@ -149,7 +196,9 @@ const UserSavedListings = () => {
                   )}
                 </div>
 
-                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">{listing.description}</p>
+                <p className="text-gray-600 dark:text-gray-300 text-sm mb-4 line-clamp-2">
+                  {listing.description}
+                </p>
 
                 {/* Action Buttons */}
                 <div className="flex gap-2">

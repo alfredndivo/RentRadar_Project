@@ -29,7 +29,7 @@ export const registerUser = async (req, res) => {
     const token = generateToken({ id: user._id, role: 'user' });
     res.cookie('token',token,{
       httpOnly:true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Set to true in production
       sameSite:'Lax',
       maxAge:24*60*60*1000,
     })
@@ -64,7 +64,7 @@ export const loginUser = async (req, res) => {
     const token = generateToken({ id: user._id, role: 'user' });
     res.cookie('token',token,{
       httpOnly:true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false,
       sameSite:'Lax',
       maxAge:24*60*60*1000,
     })
@@ -102,7 +102,7 @@ export const registerLandlord = async (req, res) => {
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false,
       sameSite: 'Lax',
       maxAge: 24 * 60 * 60 * 1000,
     });
@@ -140,7 +140,7 @@ export const loginLandlord = async (req, res) => {
 
     res.cookie('token', token, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false, // Set to true in production
       sameSite: 'Lax',
       maxAge: 24 * 60 * 60 * 1000,
     });
@@ -178,7 +178,7 @@ export const loginAdmin = async (req, res) => {
     const token = generateToken({ id: admin._id, role: 'admin' });
     res.cookie('token',token,{
       httpOnly:true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: false,
       sameSite:'Lax',
       maxAge:24*60*60*1000,
     })
@@ -199,6 +199,7 @@ export const loginAdmin = async (req, res) => {
 // =============== PROFILE ================
 
 export const getMyProfile = async (req, res) => {
+   console.log('getMyProfile controller hit');
   try {
     const user = req.user;
     if (!user) return res.status(404).json({ message: 'Profile not found' });

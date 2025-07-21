@@ -18,7 +18,7 @@ router.post('/', protect('landlord'), uploadListingImage.array('images', 6), cre
 
 // 🌍 Get all listings (public or logged in)
 router.get('/', getAllListings);
-router.get('/my/listings', protect, getMyListings);
+router.get('/my/listings', protect(), getMyListings);
 // 📌 Get one listing by ID (public)
 router.get('/:id', getSingleListing);
 
