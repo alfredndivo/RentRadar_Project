@@ -74,13 +74,12 @@ const UserSavedListings = () => {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return "/placeholder.png";
     
+    // If it's already a full URL (e.g., from Cloudinary or external source), return as is
     if (imagePath.startsWith('http')) return imagePath;
     
-    if (imagePath.startsWith('uploads/')) {
-      return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/${imagePath}`;
-    }
-    
-    return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/listings/${imagePath}`;
+    // For local paths, prepend the base URL
+    // The imagePath from the server should now include the 'uploads/' prefix
+    return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/${imagePath}`;
   };
 
   if (loading) {
@@ -140,22 +139,11 @@ const UserSavedListings = () => {
               {/* Image */}
               <div className="relative h-48 overflow-hidden">
                 {console.log(
-                  `Listing ID: ${listing._id}, Image URL: ${
-                    listing.images?.[0]
-                      ? `${import.meta.env.VITE_API_BASE_URL.replace(
-                          "/api",
-                          ""
-                        )}/${listing.images[0]}`
-                      : "/placeholder.png"
-                  }`
-                )}
+                  `Listing ID: ${listing._id}, Image URL: ${getImageUrl(listing.images?.[0])}`)}
                 <img
                   src={
                     listing.images?.[0]
-                      ? `${import.meta.env.VITE_API_BASE_URL.replace(
-                          "/api",
-                          ""
-                        )}/${listing.images[0]}`
+                      ? getImageUrl(listing.images[0])
                       : "/placeholder.png"
                   }
                   alt={listing.title}

@@ -2,20 +2,23 @@ import React, { useState } from 'react';
 import { X, MapPin, Bed, Bath, Heart, MessageCircle, Share2, Calendar, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import LocationMap from '../../components/LocationMap';
+import ImageLightbox from '../../components/ImageLightbox';
+
 
 const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
+
 
   const getImageUrl = (imagePath) => {
     if (!imagePath) return "/placeholder.png";
     
+    // If it's already a full URL (e.g., from Cloudinary or external source), return as is
     if (imagePath.startsWith('http')) return imagePath;
     
-    if (imagePath.startsWith('uploads/')) {
-      return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/${imagePath}`;
-    }
-    
-    return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/listings/${imagePath}`;
+    // For local paths, prepend the base URL
+    return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/${imagePath}`;
   };
 
   const nextImage = () => {
@@ -83,12 +86,16 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
             <div className="relative mb-6">
               <div className="aspect-video rounded-2xl overflow-hidden">
                 <img
-                  src={listing.images[currentImageIndex]}
+                  src={getImageUrl(listing.images[currentImageIndex])}
                   alt={`${listing.title} - Image ${currentImageIndex + 1}`}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover cursor-pointer"
+                  onClick={() => {
+                    setLightboxIndex(currentImageIndex);
+                    setLightboxOpen(true);
+                  }}
                 />
               </div>
-              
+
               {listing.images.length > 1 && (
                 <>
                   <button
@@ -103,7 +110,7 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
                   >
                     →
                   </button>
-                  
+
                   {/* Image indicators */}
                   <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
                     {listing.images.map((_, index) => (
@@ -111,7 +118,9 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
                         key={index}
                         onClick={() => setCurrentImageIndex(index)}
                         className={`w-2 h-2 rounded-full transition-colors ${
-                          index === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                          index === currentImageIndex
+                            ? "bg-white"
+                            : "bg-white/50"
                         }`}
                       />
                     ))}
@@ -151,19 +160,27 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
 
                 <div className="text-3xl font-bold text-[#10B981] mb-4">
                   KES {listing.price?.toLocaleString()}
-                  <span className="text-lg text-gray-600 font-normal">/month</span>
+                  <span className="text-lg text-gray-600 font-normal">
+                    /month
+                  </span>
                 </div>
               </div>
 
               {/* Description */}
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Description</h3>
-                <p className="text-gray-600 leading-relaxed">{listing.description}</p>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  Description
+                </h3>
+                <p className="text-gray-600 leading-relaxed">
+                  {listing.description}
+                </p>
               </div>
 
               {/* Features */}
               <div>
-                <h3 className="text-xl font-semibold text-gray-900 mb-3">Property Features</h3>
+                <h3 className="text-xl font-semibold text-gray-900 mb-3">
+                  Property Features
+                </h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-[#10B981] rounded-full"></div>
@@ -187,7 +204,9 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
               {/* Posted Date */}
               <div className="flex items-center gap-2 text-sm text-gray-500">
                 <Calendar className="w-4 h-4" />
-                <span>Posted on {new Date(listing.createdAt).toLocaleDateString()}</span>
+                <span>
+                  Posted on {new Date(listing.createdAt).toLocaleDateString()}
+                </span>
               </div>
             </div>
 
@@ -208,15 +227,17 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
                     onClick={onSave}
                     className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-xl transition-colors ${
                       isSaved
-                        ? 'bg-red-100 text-red-600 hover:bg-red-200'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                        ? "bg-red-100 text-red-600 hover:bg-red-200"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                     }`}
                   >
-                    <Heart className={`w-4 h-4 ${isSaved ? 'fill-current' : ''}`} />
-                    {isSaved ? 'Saved' : 'Save'}
+                    <Heart
+                      className={`w-4 h-4 ${isSaved ? "fill-current" : ""}`}
+                    />
+                    {isSaved ? "Saved" : "Save"}
                   </button>
 
-                  <button 
+                  <button
                     onClick={handleShare}
                     className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-2 px-4 rounded-xl hover:bg-gray-200 transition-colors"
                   >
@@ -227,16 +248,18 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
 
                 {/* Alternative Contact Methods */}
                 <div className="mt-6 pt-6 border-t border-gray-200">
-                  <p className="text-sm text-gray-600 mb-3">Or contact directly:</p>
+                  <p className="text-sm text-gray-600 mb-3">
+                    Or contact directly:
+                  </p>
                   <div className="flex gap-2">
-                    <button 
+                    <button
                       onClick={handleCall}
                       className="flex-1 flex items-center justify-center gap-2 bg-blue-100 text-blue-600 py-2 px-3 rounded-lg hover:bg-blue-200 transition-colors text-sm"
                     >
                       <Phone className="w-4 h-4" />
                       Call
                     </button>
-                    <button 
+                    <button
                       onClick={handleEmail}
                       className="flex-1 flex items-center justify-center gap-2 bg-gray-100 text-gray-600 py-2 px-3 rounded-lg hover:bg-gray-200 transition-colors text-sm"
                     >
@@ -249,16 +272,18 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
 
               {/* Landlord Info */}
               <div className="bg-gray-50 rounded-2xl p-6">
-                <h4 className="font-semibold text-gray-900 mb-3">Property Owner</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">
+                  Property Owner
+                </h4>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="w-12 h-12 bg-[#10B981] rounded-full flex items-center justify-center">
                     <span className="text-white font-semibold">
-                      {listing.landlord?.name?.charAt(0) || 'L'}
+                      {listing.landlord?.name?.charAt(0) || "L"}
                     </span>
                   </div>
                   <div>
                     <p className="font-medium text-gray-900">
-                      {listing.landlord?.name || 'Property Owner'}
+                      {listing.landlord?.name || "Property Owner"}
                     </p>
                     <p className="text-sm text-gray-600">Verified Landlord</p>
                   </div>
@@ -271,7 +296,9 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
 
               {/* Safety Tips */}
               <div className="bg-yellow-50 border border-yellow-200 rounded-2xl p-6">
-                <h4 className="font-semibold text-yellow-800 mb-2">Safety Tips</h4>
+                <h4 className="font-semibold text-yellow-800 mb-2">
+                  Safety Tips
+                </h4>
                 <ul className="text-sm text-yellow-700 space-y-1">
                   <li>• Always visit the property in person</li>
                   <li>• Verify landlord identity</li>
@@ -283,6 +310,12 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
           </div>
         </div>
       </div>
+      <ImageLightbox
+        images={listing.images.map(getImageUrl)}
+        isOpen={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        initialIndex={lightboxIndex}
+      />
     </div>
   );
 };

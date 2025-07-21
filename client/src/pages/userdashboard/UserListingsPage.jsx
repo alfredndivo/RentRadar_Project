@@ -130,16 +130,12 @@ const UserListingsPage = () => {
   const getImageUrl = (imagePath) => {
     if (!imagePath) return "/placeholder.png";
     
-    // If it's already a full URL, return as is
+    // If it's already a full URL (e.g., from Cloudinary or external source), return as is
     if (imagePath.startsWith('http')) return imagePath;
     
-    // If it starts with uploads/, use it directly
-    if (imagePath.startsWith('uploads/')) {
-      return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/${imagePath}`;
-    }
-    
-    // Otherwise, assume it's in uploads/listings/
-    return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/listings/${imagePath}`;
+    // For local paths, prepend the base URL
+    // The imagePath from the server should now include the 'uploads/' prefix
+    return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/${imagePath}`;
   };
 
   if (loading) {

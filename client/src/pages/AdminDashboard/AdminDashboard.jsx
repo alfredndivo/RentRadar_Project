@@ -39,7 +39,6 @@ const AdminDashboard = () => {
     { name: 'Dashboard', icon: <Home className="w-5 h-5" />, path: '/admin/dashboard', exact: true },
     { name: 'Reports', icon: <Flag className="w-5 h-5" />, path: '/admin/reports' },
     { name: 'Users', icon: <Users className="w-5 h-5" />, path: '/admin/users' },
-    { name: 'Listings', icon: <Building className="w-5 h-5" />, path: '/admin/listings' },
     { name: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, path: '/admin/analytics' },
   ];
 

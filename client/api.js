@@ -22,7 +22,7 @@ export const loginLandlord = (data) => API.post('/auth/landlord/login', data);
 export const loginAdmin = (data) => API.post('/auth/admin/login', data);
 
 export const logoutUser = () => API.post('/auth/logout');
-export const getCurrentUser = () => API.get('/auth/current-user');
+export const getCurrentUser = () => API.get('/auth/profile');
 export const updateLandlordProfile = (data) =>
   API.put('/auth/landlord/profile', data);
 export const updateUserProfile = (data) => API.put('/auth/user/profile', data);

@@ -9,30 +9,26 @@ const RequireAuth = ({ allowedRoles }) => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      console.log('🔁 Checking auth for roles:', allowedRoles);
-
       try {
         const response = await getCurrentUser();
-        console.log('✅ Raw backend response:', response);
+        const { profile, role } = response.data;
 
-        // Support both possible formats
-        const user = response?.data?.user || response?.data;
-        const role = user?.role;
-        console.log('✅ Extracted user:', user);
-        console.log('✅ Extracted role:', role);
+        console.log('Auth check response:', profile, role);
 
-        if (user && allowedRoles.includes(role)) {
-          console.log('🟢 Access granted for role:', role);
-          setUser(user);
+        // Handle both profile.role and role from response
+        const userRole = role || profile?.role;
+        
+        console.log('User role:', userRole, 'Allowed roles:', allowedRoles);
+        
+        if (profile && userRole && allowedRoles.includes(userRole)) {
+          setUser(profile);
           setError(false);
-          // Optionally cache for fallback
-          sessionStorage.setItem('rentUser', JSON.stringify(user));
         } else {
-          console.warn('🚫 Access denied for role:', role, '| Allowed:', allowedRoles);
+          console.log('User role not allowed:', userRole, 'Allowed:', allowedRoles);
           setError(true);
         }
       } catch (err) {
-        console.error('❌ Auth check failed (maybe not logged in?):', err);
+        console.error('❌ Auth check failed:', err);
         setError(true);
       } finally {
         setLoading(false);
@@ -43,7 +39,6 @@ const RequireAuth = ({ allowedRoles }) => {
   }, [allowedRoles]);
 
   if (loading) {
-    console.log('⏳ Still loading auth status...');
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
         <div className="text-center">
@@ -55,11 +50,9 @@ const RequireAuth = ({ allowedRoles }) => {
   }
 
   if (error || !user) {
-    console.warn('🔁 Redirecting to /auth due to failed auth or no user...');
     return <Navigate to="/auth" replace />;
   }
 
-  console.log('✅ Rendering outlet for authenticated user:', user?.email);
   return <Outlet context={{ user }} />;
 };
 

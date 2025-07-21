@@ -3,54 +3,57 @@ import User from '../models/User.js';
 import Landlord from '../models/Landlord.js';
 import Admin from '../models/Admin.js';
 
-const roleModelMap = {
-  user: User,
-  landlord: Landlord,
-  admin: Admin,
-  superadmin: Admin,
-};
-
 export const protect = (requiredRole = null) => {
   return async (req, res, next) => {
-    console.log('[PROTECT] Route:', req.originalUrl);
-
+    console.log('Protect middleware hit for:', req.originalUrl);
     try {
       const token = req.cookies?.token;
 
       if (!token) {
-        console.warn('[PROTECT] No token found in cookies');
+        console.log('No token found in cookies');
         return res.status(401).json({ message: 'No token, authorization denied' });
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      console.log('[PROTECT] Decoded JWT:', decoded);
+      console.log('Decoded token:', decoded);
 
-      const { id, role } = decoded;
-      const Model = roleModelMap[role];
-
-      if (!Model) {
-        console.error('[PROTECT] Invalid role in token:', role);
+      let user;
+      if (decoded.role === 'user') {
+        user = await User.findById(decoded.id).select('-password');
+        if (user) user.role = 'user';
+      } else if (decoded.role === 'landlord') {
+        user = await Landlord.findById(decoded.id).select('-password');
+        if (user) user.role = 'landlord';
+      } else if (decoded.role === 'admin' || decoded.role === 'superadmin') {
+        user = await Admin.findById(decoded.id).select('-password');
+        if (user) {
+          user.role = decoded.role;
+          // Ensure superadmin status is preserved
+          if (user.superAdmin) {
+            user.role = 'superadmin';
+          }
+        }
+      } else {
+        console.log('Invalid role in token:', decoded.role);
         return res.status(403).json({ message: 'Invalid role in token' });
       }
 
-      const user = await Model.findById(id).select('-password');
       if (!user) {
-        console.error('[PROTECT] No user found for role:', role, 'and ID:', id);
+        console.log('User not found for ID:', decoded.id);
         return res.status(404).json({ message: 'User not found' });
       }
 
-      user.role = role; // Explicitly add role to user object
-      req.user = user;
-
+      // If a specific role is required, check it
       if (requiredRole && user.role !== requiredRole) {
-        console.warn('[PROTECT] Role mismatch. Required:', requiredRole, 'Got:', user.role);
+        console.log('Role mismatch. Required:', requiredRole, 'Got:', user.role);
         return res.status(403).json({ message: `Access denied. Required role: ${requiredRole}` });
       }
 
-      console.log('[PROTECT] Auth success. User ID:', user._id, '| Role:', user.role);
+      console.log('Auth successful for user:', user._id, 'Role:', user.role);
+      req.user = user;
       next();
     } catch (err) {
-      console.error('[PROTECT] Middleware error:', err);
+      console.error('Protect middleware error:', err);
       if (err.name === 'JsonWebTokenError') {
         return res.status(401).json({ message: 'Invalid token' });
       } else if (err.name === 'TokenExpiredError') {

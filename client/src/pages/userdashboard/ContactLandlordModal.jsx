@@ -9,6 +9,14 @@ const ContactLandlordModal = ({ listing, onClose }) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return "/placeholder.png";
+    // If it's already a full URL (e.g., from Cloudinary or external source), return as is
+    if (imagePath.startsWith('http')) return imagePath;
+    // For local paths, prepend the base URL
+    return `${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/${imagePath}`;
+  };
+
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!message.trim()) {
@@ -82,8 +90,8 @@ const ContactLandlordModal = ({ listing, onClose }) => {
           {/* Property Info */}
           <div className="bg-gray-50 rounded-xl p-4 mb-6">
             <div className="flex gap-3">
-              <img
-                src={listing.images?.[0] || '/api/placeholder/80/80'}
+              <img 
+                src={getImageUrl(listing.images?.[0])}
                 alt={listing.title}
                 className="w-16 h-16 rounded-lg object-cover"
               />

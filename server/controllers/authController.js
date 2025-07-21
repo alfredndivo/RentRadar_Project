@@ -175,7 +175,7 @@ export const loginAdmin = async (req, res) => {
     const isMatch = await bcrypt.compare(password, admin.password);
     if (!isMatch) return res.status(401).json({ message: 'Invalid password' });
 
-    const token = generateToken({ id: admin._id, role: 'admin' });
+    const token = generateToken({ id: admin._id, role: admin.superAdmin ? 'superadmin' : 'admin' });
     res.cookie('token',token,{
       httpOnly:true,
       secure: false,
@@ -188,7 +188,7 @@ export const loginAdmin = async (req, res) => {
         id:admin._id,
         username:admin.username,
         email:admin.email,
-        role:'admin',
+        role: admin.superAdmin ? 'superadmin' : 'admin',
       },
     });
   } catch (err) {
@@ -199,35 +199,52 @@ export const loginAdmin = async (req, res) => {
 // =============== PROFILE ================
 
 export const getMyProfile = async (req, res) => {
-   console.log('getMyProfile controller hit');
+  console.log('✅ getMyProfile controller hit');
+
   try {
     const user = req.user;
     if (!user) return res.status(404).json({ message: 'Profile not found' });
 
-    res.json({ 
-      profile: user,
-      role: user.role 
-    });
+    // Normalize the profile fields regardless of role
+    const profileData = {
+      _id: user._id,
+      name: user.name || user.username || '',
+      email: user.email,
+      role: user.role,
+      phone: user.phone || null,
+      location: user.location || null,
+      idNumber: user.idNumber || null,
+      photo: user.photo || user.nationalIdPhoto || null,
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    };
+
+    // ✅ Return in consistent format expected by frontend
+    res.json({ profile: profileData, role: user.role });
   } catch (err) {
-    res.status(500).json({ message: 'Fetch failed', error: err.message });
+    console.error('❌ getMyProfile error:', err);
+    res.status(500).json({ message: 'Failed to fetch profile', error: err.message });
   }
 };
+
 
 export const updateProfile = async (req, res) => {
   try {
     const { _id: id, role } = req.user;
 
-    // DEBUG: see what's coming in
     console.log('✅ req.body:', req.body);
     console.log('✅ req.file:', req.file);
 
     const updateData = { ...req.body };
 
+    // ✅ Save full path (e.g., uploads/profile/photo.jpg)
     if (req.file) {
+      const filePath = req.file.path; // already includes "uploads/..."
+      
       if (role === 'landlord') {
-        updateData.nationalIdPhoto = req.file.filename;
+        updateData.nationalIdPhoto = filePath;
       } else {
-        updateData.photo = req.file.filename;
+        updateData.photo = filePath;
       }
     }
 
@@ -247,6 +264,7 @@ export const updateProfile = async (req, res) => {
     res.status(500).json({ message: 'Update failed', error: err.message });
   }
 };
+
 
 // =============== FORGOT / RESET PASSWORD ================
 
@@ -321,41 +339,5 @@ export const resetPassword = async (req, res) => {
     res.json({ message: 'Password reset successful' });
   } catch (err) {
     res.status(500).json({ message: 'Reset failed', error: err.message });
-  }
-};
-
-
-
-export const getCurrentUser = async (req, res) => {
-  try {
-    const { role, _id } = req.user;
-    console.log('getCurrentUser called');
-    console.log('Role:', role);
-    console.log('User ID:', _id);
-
-    let user;
-
-    if (role === 'user') {
-      user = await User.findById(_id).select('-password');
-    } else if (role === 'landlord') {
-      user = await Landlord.findById(_id).select('-password');
-    } else if (role === 'admin' || role === 'superadmin') {
-      user = await Admin.findById(_id).select('-password');
-    }
-
-    if (!user) {
-      console.log('User not found in controller for role:', role, 'ID:', _id);
-      return res.status(404).json({ message: 'User not found' });
-    }
-
-    return res.status(200).json({
-      user: {
-        ...user._doc,
-        role: role,
-      },
-    });
-  } catch (error) {
-    console.error('Get current user failed:', error);
-    return res.status(500).json({ message: 'Server error' });
   }
 };

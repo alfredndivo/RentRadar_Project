@@ -29,23 +29,24 @@ export const submitReport = async (req, res) => {
 
     await report.save();
 
-    // Optional: Email Admin
-    await sendEmail({
-      to: process.env.ADMIN_EMAIL,
-      subject: `🚨 New report submitted on RentRadar`,
-      html: `
-        <p>A user has submitted a new report:</p>
-        <ul>
-          <li><strong>Type:</strong> ${targetType}</li>
-          <li><strong>Target ID:</strong> ${targetId}</li>
-          <li><strong>Reason:</strong> ${reason}</li>
-          <li><strong>Details:</strong> ${details || 'N/A'}</li>
-        </ul>
-      `
-    });
+    // // Optional: Email Admin
+    // await sendEmail({
+    //   to: process.env.ADMIN_EMAIL,
+    //   subject: `🚨 New report submitted on RentRadar`,
+    //   html: `
+    //     <p>A user has submitted a new report:</p>
+    //     <ul>
+    //       <li><strong>Type:</strong> ${targetType}</li>
+    //       <li><strong>Target ID:</strong> ${targetId}</li>
+    //       <li><strong>Reason:</strong> ${reason}</li>
+    //       <li><strong>Details:</strong> ${details || 'N/A'}</li>
+    //     </ul>
+    //   `
+    // });
 
     res.status(201).json({ message: 'Report submitted' });
   } catch (err) {
+    console.error('❌ Report submission error:', err);
     res.status(500).json({ message: 'Failed to submit report' });
   }
 };
@@ -55,21 +56,29 @@ export const getAllReports = async (req, res) => {
   try {
     const reports = await Report.find()
       .populate('reportedBy', 'name email role')
-      .populate({
-        path: 'targetId',
-        select: 'title name email',
-        model: function(doc) {
-          return doc.targetType === 'listing' ? 'Listing' : 'User';
-        }
-      })
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean(); // .lean() returns plain JS objects so we can add props
 
-    res.json(reports);
+    const populatedReports = await Promise.all(
+      reports.map(async (report) => {
+        if (report.targetType === 'listing') {
+          const listing = await Listing.findById(report.targetId).select('title location');
+          return { ...report, target: listing };
+        } else if (report.targetType === 'user') {
+          const user = await User.findById(report.targetId).select('name email');
+          return { ...report, target: user };
+        }
+        return report;
+      })
+    );
+
+    res.json(populatedReports);
   } catch (err) {
     console.error('Error fetching reports:', err);
     res.status(500).json({ message: 'Failed to fetch reports' });
   }
 };
+
 
 // 🗑️ Admin: Delete a report
 export const deleteReport = async (req, res) => {
