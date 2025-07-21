@@ -8,37 +8,39 @@ const RequireAuth = ({ allowedRoles }) => {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-  const checkAuth = async () => {
-    console.log('🔁 Checking auth for roles:', allowedRoles);
-    try {
-      const response = await getCurrentUser();
+    const checkAuth = async () => {
+      console.log('🔁 Checking auth for roles:', allowedRoles);
 
-      console.log('✅ Raw backend response:', response);
+      try {
+        const response = await getCurrentUser();
+        console.log('✅ Raw backend response:', response);
 
-      // ✅ Handles both { user: {...} } and raw {...}
-      const user = response?.data?.user || response?.data;
-      const role = user?.role;
-      console.log('✅ Extracted user:', user);
-      console.log('✅ Extracted role:', role);
+        // Support both possible formats
+        const user = response?.data?.user || response?.data;
+        const role = user?.role;
+        console.log('✅ Extracted user:', user);
+        console.log('✅ Extracted role:', role);
 
-      if (user && allowedRoles.includes(role)) {
-        console.log('🟢 Access granted for role:', role);
-        setUser(user);
-        setError(false);
-      } else {
-        console.warn('🚫 Access denied for role:', role, '| Allowed:', allowedRoles);
+        if (user && allowedRoles.includes(role)) {
+          console.log('🟢 Access granted for role:', role);
+          setUser(user);
+          setError(false);
+          // Optionally cache for fallback
+          sessionStorage.setItem('rentUser', JSON.stringify(user));
+        } else {
+          console.warn('🚫 Access denied for role:', role, '| Allowed:', allowedRoles);
+          setError(true);
+        }
+      } catch (err) {
+        console.error('❌ Auth check failed (maybe not logged in?):', err);
         setError(true);
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('❌ Auth check failed (maybe not logged in?):', err);
-      setError(true);
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
 
-  checkAuth();
-}, [allowedRoles]);
+    checkAuth();
+  }, [allowedRoles]);
 
   if (loading) {
     console.log('⏳ Still loading auth status...');
@@ -57,7 +59,7 @@ const RequireAuth = ({ allowedRoles }) => {
     return <Navigate to="/auth" replace />;
   }
 
-  console.log('✅ Rendering outlet for authenticated user');
+  console.log('✅ Rendering outlet for authenticated user:', user?.email);
   return <Outlet context={{ user }} />;
 };
 
