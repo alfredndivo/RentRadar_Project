@@ -32,7 +32,11 @@ export const updateUserProfile = (data) => API.put('/auth/user/profile', data);
 export const getAllListings = () => API.get('/listings');
 export const getListingById = (id) => API.get(`/listings/${id}`);
 export const createListing = (data) => API.post('/listings', data);
-export const updateListing = (id, data) => API.put(`/listings/${id}`, data);
+export const updateListing = (id, data) => API.put(`/listings/${id}`, data, {
+  headers: {
+    'Content-Type': 'multipart/form-data',
+  },
+});
 export const deleteListing = (id) => API.delete(`/listings/${id}`);
 export const getMyListings = () => API.get('/listings/my/listings');
 export const getUserSavedListings = () => API.get('/user/saved-listings');

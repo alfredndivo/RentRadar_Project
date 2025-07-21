@@ -141,10 +141,48 @@ export const updateListing = async (req, res) => {
       return res.status(400).json({ message: 'Invalid house type' });
     }
 
+    // Handle new images if provided
+    if (req.files && req.files.length > 0) {
+      // Delete old images
+      for (const imgPath of listing.images) {
+        if (fs.existsSync(imgPath)) {
+          fs.unlinkSync(imgPath);
+        }
+      }
+      
+      // Process new images
+      const resizedPaths = [];
+      for (const file of req.files) {
+        const inputPath = file.path;
+        const ext = path.extname(file.originalname);
+        const outputPath = inputPath.replace(ext, `_resized${ext}`);
+
+        await sharp(inputPath)
+          .resize(1280, 720, {
+            fit: sharp.fit.cover,
+            position: sharp.strategy.entropy
+          })
+          .jpeg({ quality: 80 })
+          .toFile(outputPath);
+
+        fs.unlinkSync(inputPath); // delete original
+        resizedPaths.push(outputPath);
+      }
+      
+      updates.images = resizedPaths;
+    }
+
     if (updates.location) {
-      const coords = await getCoordinates(updates.location);
-      updates.lat = coords.lat;
-      updates.lng = coords.lng;
+      let coords = await getCoordinates(updates.location);
+      
+      if ((!coords || coords.lat == null || coords.lng == null) && !updates.location.toLowerCase().includes('kenya')) {
+        coords = await getCoordinates(`${updates.location}, Kenya`);
+      }
+      
+      if (coords && coords.lat != null && coords.lng != null) {
+        updates.lat = coords.lat;
+        updates.lng = coords.lng;
+      }
     }
 
     const updated = await Listing.findByIdAndUpdate(req.params.id, updates, {
@@ -153,6 +191,7 @@ export const updateListing = async (req, res) => {
 
     res.json(updated);
   } catch (err) {
+    console.error('Update listing error:', err);
     res.status(500).json({ message: 'Failed to update listing' });
   }
 };

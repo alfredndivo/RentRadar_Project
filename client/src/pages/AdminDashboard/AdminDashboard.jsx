@@ -22,6 +22,10 @@ const AdminDashboard = () => {
 
   const handleLogout = async () => {
     try {
+      // Disconnect socket before logout
+      const socketService = (await import('../../utils/socket')).default;
+      socketService.disconnect();
+      
       await logoutUser();
       toast.success('Logged out successfully');
       navigate('/auth');

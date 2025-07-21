@@ -22,6 +22,9 @@ const ListingsPage = () => {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [mapCoords, setMapCoords] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingListing, setEditingListing] = useState(null);
+  const [updating, setUpdating] = useState(false);
   const navigate = useNavigate();
 
   const [newListing, setNewListing] = useState({
@@ -70,9 +73,73 @@ const ListingsPage = () => {
   };
 
   const handleEdit = (listingId) => {
-    // Navigate to edit page or open edit modal
-    console.log("Edit listing:", listingId);
-    toast.info("Edit functionality coming soon");
+    const listing = listings.find(l => l._id === listingId);
+    if (listing) {
+      setEditingListing({
+        ...listing,
+        images: [] // Reset images for editing
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  const handleUpdateListing = async (e) => {
+    e.preventDefault();
+    if (!editingListing) return;
+
+    setUpdating(true);
+    try {
+      const formData = new FormData();
+      formData.append("title", editingListing.title);
+      formData.append("description", editingListing.description);
+      formData.append("location", editingListing.location);
+      formData.append("price", editingListing.price);
+      formData.append("houseType", editingListing.houseType);
+      formData.append("bedrooms", editingListing.bedrooms);
+      formData.append("bathrooms", editingListing.bathrooms);
+
+      // Only append new images if any were selected
+      if (editingListing.images && editingListing.images.length > 0) {
+        editingListing.images.forEach((image) => {
+          formData.append("images", image);
+        });
+      }
+
+      const response = await updateListing(editingListing._id, formData);
+      
+      // Update the listing in the state
+      setListings(prev => prev.map(listing => 
+        listing._id === editingListing._id ? response.data : listing
+      ));
+      
+      setShowEditModal(false);
+      setEditingListing(null);
+      toast.success("Listing updated successfully");
+    } catch (err) {
+      console.error("Update failed:", err);
+      toast.error(err?.response?.data?.message || "Failed to update listing");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleEditInputChange = (e) => {
+    const { name, value } = e.target;
+    setEditingListing(prev => ({ ...prev, [name]: value }));
+
+    // Trigger map preview for location input
+    if (name === "location") {
+      previewMap(value);
+    }
+  };
+
+  const handleEditImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 6) {
+      toast.error("Maximum 6 images allowed");
+      return;
+    }
+    setEditingListing(prev => ({ ...prev, images: files }));
   };
 
   const handleDelete = async (listingId) => {
@@ -581,6 +648,189 @@ const ListingsPage = () => {
                       </>
                     ) : (
                       "Create Listing"
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Listing Modal */}
+        {showEditModal && editingListing && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Modal Header */}
+              <div className="sticky top-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-6 flex items-center justify-between">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  Edit Listing
+                </h2>
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditingListing(null);
+                  }}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Modal Content */}
+              <form onSubmit={handleUpdateListing} className="p-6 space-y-6">
+                {/* Title */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Property Title *
+                  </label>
+                  <input
+                    type="text"
+                    name="title"
+                    value={editingListing.title}
+                    onChange={handleEditInputChange}
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    required
+                  />
+                </div>
+
+                {/* Location and Price */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Location *
+                    </label>
+                    <input
+                      type="text"
+                      name="location"
+                      value={editingListing.location}
+                      onChange={handleEditInputChange}
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Monthly Rent (KES) *
+                    </label>
+                    <input
+                      type="number"
+                      name="price"
+                      value={editingListing.price}
+                      onChange={handleEditInputChange}
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      required
+                    />
+                  </div>
+                </div>
+
+                {/* House Type and Rooms */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Property Type *
+                    </label>
+                    <select
+                      name="houseType"
+                      value={editingListing.houseType}
+                      onChange={handleEditInputChange}
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      required
+                    >
+                      <option value="">Select Type</option>
+                      {houseTypes.map((type) => (
+                        <option key={type} value={type}>
+                          {type}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Bedrooms
+                    </label>
+                    <input
+                      type="number"
+                      name="bedrooms"
+                      value={editingListing.bedrooms}
+                      onChange={handleEditInputChange}
+                      min="0"
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Bathrooms
+                    </label>
+                    <input
+                      type="number"
+                      name="bathrooms"
+                      value={editingListing.bathrooms}
+                      onChange={handleEditInputChange}
+                      min="0"
+                      className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Description */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Description *
+                  </label>
+                  <textarea
+                    name="description"
+                    value={editingListing.description}
+                    onChange={handleEditInputChange}
+                    rows={4}
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    required
+                  />
+                </div>
+
+                {/* Images */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Update Images (Optional)
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleEditImageChange}
+                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Leave empty to keep existing images. Select new images to replace all.
+                  </p>
+                </div>
+
+                {/* Submit Buttons */}
+                <div className="flex gap-4 pt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowEditModal(false);
+                      setEditingListing(null);
+                    }}
+                    className="flex-1 px-6 py-3 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={updating}
+                    className="flex-1 bg-green-500 text-white px-6 py-3 rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  >
+                    {updating ? (
+                      <>
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Updating...
+                      </>
+                    ) : (
+                      "Update Listing"
                     )}
                   </button>
                 </div>

@@ -26,7 +26,7 @@ router.get('/:id', getSingleListing);
 
 
 // ✏️ Update listing
-router.put('/:id', protect('landlord'), updateListing);
+router.put('/:id', protect('landlord'), uploadListingImage.array('images', 6), updateListing);
 
 // ❌ Delete listing
 router.delete('/:id', protect('landlord'), deleteListing);
