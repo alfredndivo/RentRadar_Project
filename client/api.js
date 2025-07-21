@@ -45,6 +45,13 @@ export const getRecentChats = () => API.get('/messages/recent');
 export const getMessagesWithUser = (userId) => API.get(`/messages/${userId}`);
 export const sendMessage = (data) => API.post('/messages', data);
 
+// ----------------- CHATS (New Real-time) -----------------
+
+export const createOrGetChat = (data) => API.post('/chats/create-or-get', data);
+export const getChats = () => API.get('/chats');
+export const getChatMessages = (chatId, page = 1) => API.get(`/chats/${chatId}/messages?page=${page}`);
+export const markMessagesAsSeen = (chatId) => API.patch(`/chats/${chatId}/seen`);
+export const sendChatMessage = (data) => API.post('/chats/send', data);
 // ----------------- REPORTS -----------------
 
 export const submitReport = (data) => API.post('/reports', data);
@@ -54,8 +61,16 @@ export const getAllReportsForAdmin = () => API.get('/reports');
 // Fix the admin reports endpoint
 export const getAdminReports = () => API.get('/reports');
 
+// ----------------- ADMIN -----------------
+
+export const getAdminUsers = () => API.get('/admin/users');
+export const getAdminListings = () => API.get('/admin/listings');
+export const getAdminAnalytics = () => API.get('/admin/analytics');
+export const toggleUserStatus = (userId) => API.put(`/admin/users/${userId}/toggle`);
+export const deleteAdminListing = (listingId) => API.delete(`/admin/listings/${listingId}`);
 // ----------------- OTHER -----------------
 
 export const updateProfile = (data) => API.put('/me/update', data);
+export const updateUserProfile = (data) => API.put('/auth/me/update', data);
 
 export default API;

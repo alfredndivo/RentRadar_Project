@@ -86,11 +86,25 @@ const UserProfilePage = () => {
         }
       });
 
-      await updateUserProfile(formData);
+      const response = await updateUserProfile(formData);
+      
+      // Update local state with response data
+      if (response.data) {
+        setProfile(prev => ({
+          ...prev,
+          ...response.data,
+          photo: response.data.photo || prev.photo
+        }));
+        
+        if (response.data.photo) {
+          setPhotoPreview(response.data.photo);
+        }
+      }
+      
       toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     } finally {
       setSaving(false);
     }

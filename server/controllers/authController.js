@@ -224,7 +224,11 @@ export const updateProfile = async (req, res) => {
     const updateData = { ...req.body };
 
     if (req.file) {
-      updateData.nationalIdPhoto = req.file.filename;
+      if (role === 'landlord') {
+        updateData.nationalIdPhoto = req.file.filename;
+      } else {
+        updateData.photo = req.file.filename;
+      }
     }
 
     let Model;

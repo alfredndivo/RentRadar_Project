@@ -41,7 +41,7 @@ router.post('/admin/login', loginAdmin);
 
 // =============== PROTECTED ROUTES ===============
 router.get('/profile', protect(), getMyProfile);
-router.put('/me/update', protect(), updateProfile);
+router.put('/me/update', protect(), upload.single('photo'), updateProfile);
 
 // =============== LOGOUT ===============
 router.post('/logout', (req, res) => {

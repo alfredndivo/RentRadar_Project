@@ -1,45 +1,109 @@
-import React, { useEffect, useState } from "react";
-import { MessageSquare, Send, Phone, Video, Clock, ArrowLeft } from "lucide-react";
+import React, { useState, useEffect, useRef } from 'react';
+import { MessageSquare, Send, Phone, Video, Clock, ArrowLeft, MoreVertical } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate, useOutletContext } from 'react-router-dom';
-import { getRecentChats, getMessagesWithUser, sendMessage } from '../../../api';
+import { getChats, getChatMessages, sendChatMessage, markMessagesAsSeen, getCurrentUser } from '../../../api';
 import DarkModeToggle from '../../components/DarkModeToggle';
+import socketService from '../../utils/socket';
 
 const LandlordMessagesPage = () => {
-  const [conversations, setConversations] = useState([]);
-  const [selectedConversation, setSelectedConversation] = useState(null);
+  const [chats, setChats] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sendingMessage, setSendingMessage] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [currentUserId, setCurrentUserId] = useState(null);
+  const [typingUsers, setTypingUsers] = useState(new Set());
+  const [isTyping, setIsTyping] = useState(false);
+  
   const navigate = useNavigate();
   const { user } = useOutletContext();
+  const messagesEndRef = useRef(null);
+  const typingTimeoutRef = useRef(null);
 
   useEffect(() => {
-    fetchConversations();
+    const initializeChat = async () => {
+      try {
+        const response = await getCurrentUser();
+        const userId = response.data.profile.id || response.data.profile._id;
+        setCurrentUserId(userId);
+        
+        // Connect socket
+        socketService.connect(userId);
+        
+        // Set up socket listeners
+        socketService.onReceiveMessage((message) => {
+          if (selectedChat && message.chatId === selectedChat._id) {
+            setMessages(prev => [...prev, message]);
+            scrollToBottom();
+          }
+          
+          // Update chat list
+          fetchChats();
+          
+          // Show toast if chat is not open
+          if (!selectedChat || message.chatId !== selectedChat._id) {
+            toast.info(`New message from ${message.senderId.name}`);
+          }
+        });
+
+        socketService.onUserTyping(({ userId: typingUserId, isTyping }) => {
+          setTypingUsers(prev => {
+            const newSet = new Set(prev);
+            if (isTyping) {
+              newSet.add(typingUserId);
+            } else {
+              newSet.delete(typingUserId);
+            }
+            return newSet;
+          });
+        });
+
+        await fetchChats();
+      } catch (error) {
+        console.error('Error initializing chat:', error);
+      }
+    };
+
+    initializeChat();
+
+    return () => {
+      socketService.disconnect();
+    };
   }, []);
 
   useEffect(() => {
-    if (selectedConversation) {
-      fetchMessages(selectedConversation.user._id);
+    if (selectedChat) {
+      fetchMessages(selectedChat._id);
+      socketService.joinChat(selectedChat._id);
+      markMessagesAsSeen(selectedChat._id);
     }
-  }, [selectedConversation]);
+  }, [selectedChat]);
 
-  const fetchConversations = async () => {
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const fetchChats = async () => {
     try {
-      const response = await getRecentChats();
-      setConversations(response.data || []);
+      const response = await getChats();
+      setChats(response.data || []);
     } catch (error) {
-      console.error('Error fetching conversations:', error);
+      console.error('Error fetching chats:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchMessages = async (userId) => {
+  const fetchMessages = async (chatId) => {
     try {
-      const response = await getMessagesWithUser(userId);
+      const response = await getChatMessages(chatId);
       setMessages(response.data || []);
     } catch (error) {
       console.error('Error fetching messages:', error);
@@ -49,17 +113,22 @@ const LandlordMessagesPage = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedConversation) return;
+    if (!newMessage.trim() || !selectedChat) return;
 
     setSendingMessage(true);
     try {
-      const response = await sendMessage({
-        receiverId: selectedConversation.user._id,
-        text: newMessage
+      const response = await sendChatMessage({
+        chatId: selectedChat._id,
+        receiverId: selectedChat.participant._id,
+        content: newMessage
       });
 
       setMessages(prev => [...prev, response.data]);
       setNewMessage('');
+      scrollToBottom();
+      
+      // Stop typing indicator
+      handleTyping(false);
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message');
@@ -68,10 +137,61 @@ const LandlordMessagesPage = () => {
     }
   };
 
-  const filteredConversations = conversations.filter(conv =>
-    conv.user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conv.user.email?.toLowerCase().includes(searchTerm.toLowerCase())
+  const handleTyping = (typing) => {
+    if (selectedChat && currentUserId) {
+      socketService.sendTyping(selectedChat._id, currentUserId, typing);
+      setIsTyping(typing);
+      
+      if (typing) {
+        // Clear existing timeout
+        if (typingTimeoutRef.current) {
+          clearTimeout(typingTimeoutRef.current);
+        }
+        
+        // Set new timeout to stop typing
+        typingTimeoutRef.current = setTimeout(() => {
+          handleTyping(false);
+        }, 3000);
+      }
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setNewMessage(e.target.value);
+    
+    if (e.target.value.trim() && !isTyping) {
+      handleTyping(true);
+    } else if (!e.target.value.trim() && isTyping) {
+      handleTyping(false);
+    }
+  };
+
+  const filteredChats = chats.filter(chat =>
+    chat.participant?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    chat.participant?.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  const formatTime = (timestamp) => {
+    return new Date(timestamp).toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const formatDate = (timestamp) => {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else {
+      return date.toLocaleDateString();
+    }
+  };
 
   if (loading) {
     return (
@@ -107,7 +227,7 @@ const LandlordMessagesPage = () => {
         {/* Messages Interface */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm h-[calc(100vh-12rem)] flex border border-green-100 dark:border-gray-700">
           {/* Conversations Sidebar */}
-          <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col">
+          <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col h-full">
             {/* Search */}
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <input
@@ -121,7 +241,7 @@ const LandlordMessagesPage = () => {
 
             {/* Conversations List */}
             <div className="flex-1 overflow-y-auto">
-              {filteredConversations.length === 0 ? (
+              {filteredChats.length === 0 ? (
                 <div className="p-6 text-center">
                   <MessageSquare className="w-12 h-12 text-gray-400 dark:text-gray-500 mx-auto mb-3" />
                   <p className="text-gray-600 dark:text-gray-300">No conversations yet</p>
@@ -129,12 +249,12 @@ const LandlordMessagesPage = () => {
                 </div>
               ) : (
                 <div className="space-y-1 p-3">
-                  {filteredConversations.map((conversation) => (
+                  {filteredChats.map((chat) => (
                     <button
-                      key={conversation.user._id}
-                      onClick={() => setSelectedConversation(conversation)}
+                      key={chat._id}
+                      onClick={() => setSelectedChat(chat)}
                       className={`w-full p-4 rounded-xl text-left transition-colors ${
-                        selectedConversation?.user._id === conversation.user._id
+                        selectedChat?._id === chat._id
                           ? 'bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-700'
                           : 'hover:bg-gray-50 dark:hover:bg-gray-700'
                       }`}
@@ -142,22 +262,27 @@ const LandlordMessagesPage = () => {
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center relative">
                           <span className="text-white font-semibold">
-                            {conversation.user.name?.charAt(0) || 'U'}
+                            {chat.participant?.name?.charAt(0) || 'U'}
                           </span>
+                          {chat.unreadCount > 0 && (
+                            <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                              {chat.unreadCount}
+                            </div>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
                             <p className="font-medium text-gray-900 dark:text-white truncate">
-                              {conversation.user.name || conversation.user.email}
+                              {chat.participant?.name || chat.participant?.email}
                             </p>
-                            {conversation.lastMessage?.createdAt && (
+                            {chat.lastMessage?.createdAt && (
                               <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {new Date(conversation.lastMessage.createdAt).toLocaleDateString()}
+                                {formatTime(chat.lastMessage.createdAt)}
                               </span>
                             )}
                           </div>
                           <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
-                            {conversation.lastMessage?.text || 'No messages yet'}
+                            {chat.lastMessage?.content || 'No messages yet'}
                           </p>
                         </div>
                       </div>
@@ -169,24 +294,27 @@ const LandlordMessagesPage = () => {
           </div>
 
           {/* Chat Area */}
-          <div className="flex-1 flex flex-col">
-            {selectedConversation ? (
+          <div className="flex-1 flex flex-col h-full">
+            {selectedChat ? (
               <>
                 {/* Chat Header */}
                 <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
                       <span className="text-white font-semibold">
-                        {selectedConversation.user.name?.charAt(0) || 'U'}
+                        {selectedChat.participant?.name?.charAt(0) || 'U'}
                       </span>
                     </div>
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">
-                        {selectedConversation.user.name || selectedConversation.user.email}
+                        {selectedChat.participant?.name || selectedChat.participant?.email}
                       </p>
                       <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">
                         <Clock className="w-3 h-3" />
                         Tenant
+                        {typingUsers.size > 0 && (
+                          <span className="text-green-500 ml-2">Typing...</span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -196,6 +324,9 @@ const LandlordMessagesPage = () => {
                     </button>
                     <button className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
                       <Video className="w-5 h-5" />
+                    </button>
+                    <button className="p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+                      <MoreVertical className="w-5 h-5" />
                     </button>
                   </div>
                 </div>
@@ -208,32 +339,48 @@ const LandlordMessagesPage = () => {
                       <p>No messages yet. Start the conversation!</p>
                     </div>
                   ) : (
-                    messages.map((message, index) => (
-                      <div
-                        key={index}
-                        className={`flex ${
-                          message.senderId === user._id ? 'justify-end' : 'justify-start'
-                        }`}
-                      >
-                        <div
-                          className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                            message.senderId === user._id
-                              ? 'bg-green-500 text-white'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                          }`}
-                        >
-                          <p>{message.text}</p>
-                          <p className={`text-xs mt-1 ${
-                            message.senderId === user._id ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
-                          }`}>
-                            {new Date(message.createdAt).toLocaleTimeString([], {
-                              hour: '2-digit',
-                              minute: '2-digit'
-                            })}
-                          </p>
-                        </div>
-                      </div>
-                    ))
+                    <>
+                      {messages.map((message, index) => {
+                        const isOwn = message.senderId._id === currentUserId || message.senderId === currentUserId;
+                        const showDate = index === 0 || 
+                          formatDate(message.createdAt) !== formatDate(messages[index - 1].createdAt);
+                        
+                        return (
+                          <div key={message._id || index}>
+                            {showDate && (
+                              <div className="text-center my-4">
+                                <span className="bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-3 py-1 rounded-full text-xs">
+                                  {formatDate(message.createdAt)}
+                                </span>
+                              </div>
+                            )}
+                            <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                                isOwn
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                              }`}>
+                                <p>{message.content}</p>
+                                <div className={`flex items-center justify-between mt-1 ${
+                                  isOwn ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
+                                }`}>
+                                  <span className="text-xs">
+                                    {formatTime(message.createdAt)}
+                                  </span>
+                                  {isOwn && (
+                                    <span className="text-xs ml-2">
+                                      {message.status === 'seen' ? '✓✓' : 
+                                       message.status === 'delivered' ? '✓' : '○'}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <div ref={messagesEndRef} />
+                    </>
                   )}
                 </div>
 
@@ -243,7 +390,7 @@ const LandlordMessagesPage = () => {
                     <input
                       type="text"
                       value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
+                      onChange={handleInputChange}
                       placeholder="Type your message..."
                       className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       disabled={sendingMessage}

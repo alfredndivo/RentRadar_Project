@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { X, Send, Phone, Mail } from 'lucide-react';
 import { toast } from 'sonner';
-import { sendMessage } from '../../../api';
+import { createOrGetChat, sendChatMessage } from '../../../api';
+import { useNavigate } from 'react-router-dom';
 
 const ContactLandlordModal = ({ listing, onClose }) => {
   const [message, setMessage] = useState(`Hi, I'm interested in your property "${listing.title}" located at ${listing.location}. Could you please provide more details?`);
   const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
@@ -16,14 +18,29 @@ const ContactLandlordModal = ({ listing, onClose }) => {
 
     setLoading(true);
     try {
-      await sendMessage({
+      // First create or get the chat
+      const chatResponse = await createOrGetChat({
         receiverId: listing.landlord._id || listing.landlord,
-        text: message,
-        listingId: listing._id
+        receiverType: 'Landlord'
       });
       
-      toast.success('Message sent successfully!');
+      const chat = chatResponse.data;
+      
+      // Send the message
+      await sendChatMessage({
+        chatId: chat._id,
+        receiverId: listing.landlord._id || listing.landlord,
+        content: message
+      });
+      
+      toast.success('Message sent! Redirecting to chat...');
       onClose();
+      
+      // Navigate to messages page
+      setTimeout(() => {
+        navigate('/user/dashboard/messages');
+      }, 1000);
+      
     } catch (error) {
       console.error('Error sending message:', error);
       toast.error('Failed to send message. Please try again.');
@@ -32,6 +49,21 @@ const ContactLandlordModal = ({ listing, onClose }) => {
     }
   };
 
+  const handleCall = () => {
+    if (listing.landlord?.phone) {
+      window.location.href = `tel:${listing.landlord.phone}`;
+    } else {
+      toast.error('Phone number not available');
+    }
+  };
+
+  const handleEmail = () => {
+    if (listing.landlord?.email) {
+      window.location.href = `mailto:${listing.landlord.email}?subject=Inquiry about ${listing.title}&body=${encodeURIComponent(message)}`;
+    } else {
+      toast.error('Email not available');
+    }
+  };
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl max-w-md w-full">
