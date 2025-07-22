@@ -28,18 +28,40 @@ dotenv.config();
 // Initialize app
 const app = express();
 const server = createServer(app);
+
+
+// Middleware
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://rentradar-flame.vercel.app'
+];
+
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:5173',
+    origin: function (origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by Socket.IO CORS'));
+      }
+    },
     credentials: true
   }
 });
 
-// Middleware
 app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true,
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
 }));
+
+
+
 
 app.use(morgan('dev'));
 app.use(express.json());
