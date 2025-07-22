@@ -7,7 +7,7 @@ import LandlordDashboard from './pages/Landlorddashboard/Landlorddashboard';
 
 import LandlordListingsPage from './pages/Landlorddashboard/ListingsPage';
 import LandlordMessagesPage from './pages/Landlorddashboard/LandlordMessagesPage';
-import LandlordReportsPage from './pages/LandlordDashboard/LandlordReportsPage';
+import LandlordReportsPage from './pages/Landlorddashboard/LandlordReportsPage';
 import LandlordCompleteProfile from './pages/Landlorddashboard/LandlordCompleteProfile';
 
 import AdminReportsPage from './pages/AdminDashboard/AdminReportsPage';
