@@ -11,7 +11,8 @@ import {
   Flag, 
   User, 
   LogOut,
-  Bell
+  Bell,
+  Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
 import DarkModeToggle from '../../components/DarkModeToggle';
@@ -20,6 +21,7 @@ import ProfileCompletionBar from '../../components/ProfileCompletionBar';
 import UserListingsPage from './UserListingsPage';
 import UserMessagesPage from './UserMessagesPage';
 import UserSavedListings from './UserSavedListings';
+import UserBookingsPage from './UserBookingsPage';
 import UserReportsPage from './UserReportsPage';
 import UserProfilePage from './UserProfilePage';
 import { logoutUser } from '../../../api';
@@ -48,6 +50,7 @@ const UserDashboard = () => {
   const navItems = [
     { name: 'Browse Listings', icon: <Search className="w-5 h-5" />, path: '/user/dashboard', exact: true },
     { name: 'Saved Listings', icon: <Heart className="w-5 h-5" />, path: '/user/dashboard/saved' },
+    { name: 'My Bookings', icon: <Calendar className="w-5 h-5" />, path: '/user/dashboard/bookings' },
     { name: 'Messages', icon: <MessageSquare className="w-5 h-5" />, path: '/user/dashboard/messages' },
     { name: 'My Reports', icon: <Flag className="w-5 h-5" />, path: '/user/dashboard/reports' },
     { name: 'Profile', icon: <User className="w-5 h-5" />, path: '/user/dashboard/profile' },
@@ -152,6 +155,7 @@ const UserDashboard = () => {
               <Routes>
                 <Route path="/" element={<UserListingsPage />} />
                 <Route path="/saved" element={<UserSavedListings />} />
+                <Route path="/bookings" element={<UserBookingsPage />} />
                 <Route path="/messages" element={<UserMessagesPage />} />
                 <Route path="/reports" element={<UserReportsPage />} />
                 <Route path="/profile" element={<UserProfilePage />} />

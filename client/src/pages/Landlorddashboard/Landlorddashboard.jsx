@@ -40,6 +40,7 @@ const LandlordDashboard = () => {
   const navItems = [
     { name: 'Dashboard', icon: <Home className="w-5 h-5" />, path: '/landlord/dashboard', exact: true },
     { name: 'My Listings', icon: <Building className="w-5 h-5" />, path: '/landlord/listings' },
+    { name: 'Bookings', icon: <Calendar className="w-5 h-5" />, path: '/landlord/bookings' },
     { name: 'Messages', icon: <Mail className="w-5 h-5" />, path: '/landlord/messages' },
     { name: 'Reports', icon: <Flag className="w-5 h-5" />, path: '/landlord/reports' },
     { name: 'Profile', icon: <User className="w-5 h-5" />, path: '/landlord/profile' },

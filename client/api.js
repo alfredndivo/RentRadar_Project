@@ -73,6 +73,19 @@ export const getAdminAnalytics = () => API.get('/admin/analytics');
 export const toggleUserStatus = (userId) => API.put(`/admin/users/${userId}/toggle`);
 export const deleteAdminListing = (listingId) => API.delete(`/admin/listings/${listingId}`);
 // ----------------- OTHER -----------------
+// ----------------- BOOKINGS -----------------
+
+export const createBooking = (data) => API.post('/bookings', data);
+export const getUserBookings = () => API.get('/bookings/my-bookings');
+export const getLandlordBookings = (status) => API.get(`/bookings/landlord-bookings${status ? `?status=${status}` : ''}`);
+export const updateBookingStatus = (id, data) => API.patch(`/bookings/${id}/status`, data);
+export const getBookingById = (id) => API.get(`/bookings/${id}`);
+export const uploadBookingPhotos = (id, data) => API.post(`/bookings/${id}/photos`, data, {
+  headers: {
+    'Content-Type': 'multipart/form-data',
+  },
+});
+
 
 export const updateProfile = (data) => API.put('/me/update', data);
 // export const updateUserProfile = (data) => API.put('/auth/me/update', data);

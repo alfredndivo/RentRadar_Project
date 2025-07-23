@@ -6,6 +6,7 @@ import UserDashboard from './pages/userdashboard/UserDashboard';
 import LandlordDashboard from './pages/Landlorddashboard/Landlorddashboard';
 
 import LandlordListingsPage from './pages/Landlorddashboard/ListingsPage';
+import LandlordBookingsPage from './pages/Landlorddashboard/LandlordBookingsPage';
 import LandlordMessagesPage from './pages/Landlorddashboard/LandlordMessagesPage';
 import LandlordReportsPage from './pages/Landlorddashboard/LandlordReportsPage';
 import LandlordCompleteProfile from './pages/Landlorddashboard/LandlordCompleteProfile';
@@ -35,6 +36,7 @@ function App() {
       <Route element={<RequireAuth allowedRoles={['landlord']} />}>
         <Route path="/landlord/dashboard" element={<LandlordDashboard />} />
         <Route path="/landlord/listings" element={<LandlordListingsPage />} />
+        <Route path="/landlord/bookings" element={<LandlordBookingsPage />} />
         <Route path="/landlord/messages" element={<LandlordMessagesPage />} />
         <Route path="/landlord/reports" element={<LandlordReportsPage />} />
         <Route path="/landlord/profile" element={<LandlordCompleteProfile />} />

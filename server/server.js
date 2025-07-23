@@ -17,6 +17,7 @@ import reviewRoutes from './routes/reviewRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import bookingRoutes from './routes/bookingRoutes.js';
 
 // Setup __dirname in ES6
 const __filename = fileURLToPath(import.meta.url);
@@ -87,6 +88,7 @@ app.use('/api/reports', reportRoutes);
 app.use('/api/reviews', reviewRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/bookings', bookingRoutes);
 
 // Socket.io connection handling
 io.on('connection', (socket) => {

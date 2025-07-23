@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Search, Heart, MessageSquare, User } from 'lucide-react';
+import { Home, Search, Heart, MessageSquare, User, Building, Calendar, Flag } from 'lucide-react';
 
 const BottomNavBar = ({ userType = 'user' }) => {
   const location = useLocation();
@@ -10,17 +10,17 @@ const BottomNavBar = ({ userType = 'user' }) => {
       return [
         { name: 'Dashboard', icon: Home, path: '/landlord/dashboard' },
         { name: 'Listings', icon: Search, path: '/landlord/listings' },
+        { name: 'Bookings', icon: Calendar, path: '/landlord/bookings' },
         { name: 'Messages', icon: MessageSquare, path: '/landlord/messages' },
-        { name: 'Reports', icon: Heart, path: '/landlord/reports' },
-        { name: 'Profile', icon: User, path: '/landlord/profile' },
+        { name: 'Profile', icon: User, path: '/landlord/profile' }
       ];
     } else {
       return [
         { name: 'Browse', icon: Search, path: '/user/dashboard' },
         { name: 'Saved', icon: Heart, path: '/user/dashboard/saved' },
+        { name: 'Bookings', icon: Calendar, path: '/user/dashboard/bookings' },
         { name: 'Messages', icon: MessageSquare, path: '/user/dashboard/messages' },
-        { name: 'Reports', icon: Home, path: '/user/dashboard/reports' },
-        { name: 'Profile', icon: User, path: '/user/dashboard/profile' },
+        { name: 'Profile', icon: User, path: '/user/dashboard/profile' }
       ];
     }
   };

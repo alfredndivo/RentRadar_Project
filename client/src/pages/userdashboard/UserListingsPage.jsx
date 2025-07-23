@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, MapPin, Bed, Bath, Heart, Eye, MessageCircle, CheckCircle } from 'lucide-react';
+import { Search, Filter, MapPin, Bed, Bath, Heart, Eye, MessageCircle, CheckCircle, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAllListings, saveListing, unsaveListing } from '../../../api';
 import { ListingSkeleton } from '../../components/SkeletonLoader';
 import ImageLightbox from '../../components/ImageLightbox';
 import ListingDetailsModal from './ListingDetailsModal';
 import ContactLandlordModal from './ContactLandlordModal';
+import BookingModal from './BookingModal';
 
 const UserListingsPage = () => {
   const [listings, setListings] = useState([]);
@@ -22,6 +23,7 @@ const UserListingsPage = () => {
   const [selectedListing, setSelectedListing] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
+  const [showBookingModal, setShowBookingModal] = useState(false);
   const [savedListings, setSavedListings] = useState(new Set());
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState([]);
@@ -119,6 +121,10 @@ const UserListingsPage = () => {
     setShowContactModal(true);
   };
 
+  const openBookingModal = (listing) => {
+    setSelectedListing(listing);
+    setShowBookingModal(true);
+  };
   const openLightbox = (images, index = 0) => {
     // Convert image paths to full URLs
     const fullImageUrls = images.map(img => getImageUrl(img));
@@ -332,11 +338,18 @@ const UserListingsPage = () => {
                   View Details
                 </button>
                 <button
+                  onClick={() => openBookingModal(listing)}
+                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  <Calendar className="w-4 h-4" />
+                  Book Visit
+                </button>
+                <button
                   onClick={() => openContactModal(listing)}
-                  className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                 >
                   <MessageCircle className="w-4 h-4" />
-                  Contact
+                  Chat
                 </button>
               </div>
             </div>
@@ -381,6 +394,16 @@ const UserListingsPage = () => {
         <ContactLandlordModal
           listing={selectedListing}
           onClose={() => setShowContactModal(false)}
+        />
+      )}
+
+      {showBookingModal && selectedListing && (
+        <BookingModal
+          listing={selectedListing}
+          onClose={() => setShowBookingModal(false)}
+          onSuccess={() => {
+            // Optionally refresh data or show success message
+          }}
         />
       )}
     </div>
