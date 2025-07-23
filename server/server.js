@@ -76,6 +76,7 @@ app.use((req, res, next) => {
 // Static image serving
 // Make io available to routes
 app.set('io', io);
+global.io = io;
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes

@@ -18,6 +18,8 @@ import { toast } from 'sonner';
 import DarkModeToggle from '../../components/DarkModeToggle';
 import BottomNavBar from '../../components/BottomNavBar';
 import ProfileCompletionBar from '../../components/ProfileCompletionBar';
+import NotificationBell from '../../components/NotificationBell';
+import UserDashboardStats from './UserDashboardStats';
 import UserListingsPage from './UserListingsPage';
 import UserMessagesPage from './UserMessagesPage';
 import UserSavedListings from './UserSavedListings';
@@ -48,7 +50,8 @@ const UserDashboard = () => {
   };
 
   const navItems = [
-    { name: 'Browse Listings', icon: <Search className="w-5 h-5" />, path: '/user/dashboard', exact: true },
+    { name: 'Dashboard', icon: <Home className="w-5 h-5" />, path: '/user/dashboard', exact: true },
+    { name: 'Browse Listings', icon: <Search className="w-5 h-5" />, path: '/user/dashboard/browse' },
     { name: 'Saved Listings', icon: <Heart className="w-5 h-5" />, path: '/user/dashboard/saved' },
     { name: 'My Bookings', icon: <Calendar className="w-5 h-5" />, path: '/user/dashboard/bookings' },
     { name: 'Messages', icon: <MessageSquare className="w-5 h-5" />, path: '/user/dashboard/messages' },
@@ -152,8 +155,22 @@ const UserDashboard = () => {
           {/* Main Content */}
           <main className="flex-1 lg:ml-0 min-h-screen pb-20 md:pb-0">
             <div className="p-6">
+              {/* Mobile Notification Bell */}
+              <div className="md:hidden flex justify-end mb-4">
+                <NotificationBell userId={user?._id || user?.id} userType="User" />
+              </div>
+              
               <Routes>
-                <Route path="/" element={<UserListingsPage />} />
+                <Route path="/" element={
+                  <div className="space-y-6">
+                    <UserDashboardStats user={user} />
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-green-100 dark:border-gray-700">
+                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Browse Properties</h2>
+                      <UserListingsPage />
+                    </div>
+                  </div>
+                } />
+                <Route path="/browse" element={<UserListingsPage />} />
                 <Route path="/saved" element={<UserSavedListings />} />
                 <Route path="/bookings" element={<UserBookingsPage />} />
                 <Route path="/messages" element={<UserMessagesPage />} />

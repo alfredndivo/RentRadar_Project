@@ -86,6 +86,11 @@ export const uploadBookingPhotos = (id, data) => API.post(`/bookings/${id}/photo
   },
 });
 
+// ----------------- ADMIN ACTIONS -----------------
+export const sendWarningMessage = (data) => API.post('/admin/send-warning', data);
+export const banListing = (id, data) => API.post(`/admin/ban-listing/${id}`, data);
+export const forceLogoutUser = (id, data) => API.post(`/admin/force-logout/${id}`, data);
+export const sendGlobalNotification = (data) => API.post('/admin/global-notification', data);
 
 export const updateProfile = (data) => API.put('/me/update', data);
 // export const updateUserProfile = (data) => API.put('/auth/me/update', data);

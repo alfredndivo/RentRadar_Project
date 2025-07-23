@@ -61,9 +61,32 @@ const listingSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    views: {
+      type: Number,
+      default: 0
+    },
+    isActive: {
+      type: Boolean,
+      default: true
+    },
+    isBanned: {
+      type: Boolean,
+      default: false
+    },
+    banReason: {
+      type: String
+    },
+    isOccupied: {
+      type: Boolean,
+      default: false
+    },
     createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
+
+// Index for efficient queries
+listingSchema.index({ landlord: 1, isActive: 1 });
+listingSchema.index({ location: 'text', title: 'text', description: 'text' });
 
 export default mongoose.model('Listing', listingSchema);

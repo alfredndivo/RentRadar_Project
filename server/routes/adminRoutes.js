@@ -5,6 +5,10 @@ import {
   deleteListing,
   setAdminRole,
   getAnalytics,
+  sendWarningMessage,
+  banListing,
+  forceLogoutUser,
+  sendGlobalNotification
 } from '../controllers/adminController.js';
 import { getAllReports } from '../controllers/reportController.js';
 
@@ -22,5 +26,11 @@ router.get('/reports', protect(), roleCheck(['admin', 'superadmin']), getAllRepo
 router.put('/users/:id/toggle', protect(), roleCheck(['admin', 'superadmin']), toggleUserStatus);
 router.delete('/listings/:id', protect(), roleCheck(['admin', 'superadmin']), deleteListing);
 router.get('/analytics', protect(), roleCheck(['admin', 'superadmin']), getAnalytics);
+
+// New admin actions
+router.post('/send-warning', protect(), roleCheck(['admin', 'superadmin']), sendWarningMessage);
+router.post('/ban-listing/:id', protect(), roleCheck(['admin', 'superadmin']), banListing);
+router.post('/force-logout/:id', protect(), roleCheck(['admin', 'superadmin']), forceLogoutUser);
+router.post('/global-notification', protect(), roleCheck(['admin', 'superadmin']), sendGlobalNotification);
 
 export default router;

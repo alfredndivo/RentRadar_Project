@@ -87,7 +87,7 @@ export const createListing = async (req, res) => {
 export const getAllListings = async (req, res) => {
   try {
     const { location, houseType, minPrice, maxPrice } = req.query;
-    const query = {};
+    const query = { isActive: true, isBanned: false };
 
     if (location) query.location = { $regex: location, $options: 'i' };
     if (houseType) query.houseType = houseType;
@@ -109,6 +109,11 @@ export const getSingleListing = async (req, res) => {
   try {
     const listing = await Listing.findById(req.params.id);
     if (!listing) return res.status(404).json({ message: 'Listing not found' });
+    
+    // Increment view count
+    listing.views = (listing.views || 0) + 1;
+    await listing.save();
+    
     res.json(listing);
   } catch (err) {
     res.status(500).json({ message: 'Failed to get listing' });

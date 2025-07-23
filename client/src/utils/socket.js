@@ -78,6 +78,35 @@ class SocketService {
     }
   }
 
+  onNewNotification(callback) {
+    if (this.socket) {
+      this.socket.on('newNotification', callback);
+    }
+  }
+
+  onAdminWarning(callback) {
+    if (this.socket) {
+      this.socket.on('adminWarning', callback);
+    }
+  }
+
+  onGlobalNotification(callback) {
+    if (this.socket) {
+      this.socket.on('globalNotification', callback);
+    }
+  }
+
+  onForceLogout(callback) {
+    if (this.socket) {
+      this.socket.on('forceLogout', callback);
+    }
+  }
+
+  onListingBanned(callback) {
+    if (this.socket) {
+      this.socket.on('listingBanned', callback);
+    }
+  }
   off(event) {
     if (this.socket) {
       this.socket.off(event);

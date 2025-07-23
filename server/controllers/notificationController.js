@@ -3,15 +3,27 @@
 import Notification from '../models/Notification.js';
 
 // 🧠 Create a new notification (reusable from other controllers)
-export const createNotification = async ({ userId, type, message, link }) => {
+export const createNotification = async ({ userId, userType = 'User', type, message, title = '', link = '', data = {}, priority = 'medium' }) => {
   try {
     const notification = new Notification({
       user: userId,
+      userType,
       type,
       message,
-      link
+      title,
+      link,
+      data,
+      priority
     });
     await notification.save();
+    
+    // Emit real-time notification
+    const io = global.io;
+    if (io) {
+      io.to(`user:${userId}`).emit('newNotification', notification);
+    }
+    
+    return notification;
   } catch (err) {
     console.error('Failed to create notification:', err.message);
   }

@@ -16,11 +16,11 @@ const BottomNavBar = ({ userType = 'user' }) => {
       ];
     } else {
       return [
-        { name: 'Browse', icon: Search, path: '/user/dashboard' },
+        { name: 'Home', icon: Home, path: '/user/dashboard' },
+        { name: 'Browse', icon: Search, path: '/user/dashboard/browse' },
         { name: 'Saved', icon: Heart, path: '/user/dashboard/saved' },
         { name: 'Bookings', icon: Calendar, path: '/user/dashboard/bookings' },
-        { name: 'Messages', icon: MessageSquare, path: '/user/dashboard/messages' },
-        { name: 'Profile', icon: User, path: '/user/dashboard/profile' }
+        { name: 'Messages', icon: MessageSquare, path: '/user/dashboard/messages' }
       ];
     }
   };
