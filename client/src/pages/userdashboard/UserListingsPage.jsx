@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Filter, MapPin, Bed, Bath, Heart, Eye, MessageCircle, CheckCircle, Calendar } from 'lucide-react';
+import { Search, Filter, MapPin, Bed, Bath, Heart, Eye, MessageCircle, CheckCircle, Calendar, BarChart3, GitCompare } from 'lucide-react';
 import { toast } from 'sonner';
 import { getAllListings, saveListing, unsaveListing } from '../../../api';
 import { ListingSkeleton } from '../../components/SkeletonLoader';
 import ImageLightbox from '../../components/ImageLightbox';
+import AdvancedSearch from '../../components/AdvancedSearch';
+import PropertyComparison from '../../components/PropertyComparison';
 import ListingDetailsModal from './ListingDetailsModal';
 import ContactLandlordModal from './ContactLandlordModal';
 import BookingModal from './BookingModal';
@@ -20,6 +22,9 @@ const UserListingsPage = () => {
     maxPrice: ''
   });
   const [showFilters, setShowFilters] = useState(false);
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
+  const [comparisonList, setComparisonList] = useState([]);
   const [selectedListing, setSelectedListing] = useState(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
   const [showContactModal, setShowContactModal] = useState(false);
@@ -125,6 +130,31 @@ const UserListingsPage = () => {
     setSelectedListing(listing);
     setShowBookingModal(true);
   };
+  
+  const handleAdvancedSearch = (searchFilters) => {
+    setFilters(searchFilters);
+    // The useEffect will automatically apply the new filters
+  };
+  
+  const addToComparison = (listing) => {
+    if (comparisonList.length >= 3) {
+      toast.error('You can compare up to 3 properties');
+      return;
+    }
+    
+    if (comparisonList.find(p => p._id === listing._id)) {
+      toast.error('Property already in comparison');
+      return;
+    }
+    
+    setComparisonList(prev => [...prev, listing]);
+    toast.success('Property added to comparison');
+  };
+  
+  const removeFromComparison = (listingId) => {
+    setComparisonList(prev => prev.filter(p => p._id !== listingId));
+  };
+
   const openLightbox = (images, index = 0) => {
     // Convert image paths to full URLs
     const fullImageUrls = images.map(img => getImageUrl(img));
@@ -190,6 +220,15 @@ const UserListingsPage = () => {
           >
             <Filter className="w-5 h-5" />
             Filters
+          </button>
+          
+          {/* Advanced Search */}
+          <button
+            onClick={() => setShowAdvancedSearch(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors"
+          >
+            <BarChart3 className="w-5 h-5" />
+            Advanced
           </button>
         </div>
 
@@ -257,6 +296,34 @@ const UserListingsPage = () => {
         )}
       </div>
 
+      {/* Comparison Bar */}
+      {comparisonList.length > 0 && (
+        <div className="fixed bottom-20 md:bottom-6 left-6 right-6 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-lg p-4 z-30">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <GitCompare className="w-5 h-5 text-blue-500" />
+              <span className="font-medium text-gray-900 dark:text-white">
+                {comparisonList.length} properties selected for comparison
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setShowComparison(true)}
+                className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+              >
+                Compare
+              </button>
+              <button
+                onClick={() => setComparisonList([])}
+                className="bg-gray-500 text-white px-4 py-2 rounded-lg hover:bg-gray-600 transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Results Count */}
       <div className="text-gray-600 dark:text-gray-300">
         Found {filteredListings.length} properties
@@ -293,6 +360,15 @@ const UserListingsPage = () => {
                 }`}
               >
                 <Heart className={`w-5 h-5 ${savedListings.has(listing._id) ? 'fill-current' : ''}`} />
+              </button>
+              
+              {/* Compare Button */}
+              <button
+                onClick={() => addToComparison(listing)}
+                className="absolute bottom-3 right-3 p-2 bg-blue-500/80 text-white rounded-full hover:bg-blue-500 transition-all"
+                title="Add to comparison"
+              >
+                <GitCompare className="w-4 h-4" />
               </button>
             </div>
 
@@ -376,6 +452,22 @@ const UserListingsPage = () => {
         initialIndex={lightboxIndex}
       />
 
+      {/* Advanced Search Modal */}
+      {showAdvancedSearch && (
+        <AdvancedSearch
+          onSearch={handleAdvancedSearch}
+          onClose={() => setShowAdvancedSearch(false)}
+        />
+      )}
+      
+      {/* Property Comparison Modal */}
+      {showComparison && (
+        <PropertyComparison
+          properties={comparisonList}
+          onClose={() => setShowComparison(false)}
+          onRemove={removeFromComparison}
+        />
+      )}
       {/* Modals */}
       {showDetailsModal && selectedListing && (
         <ListingDetailsModal

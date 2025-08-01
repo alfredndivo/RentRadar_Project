@@ -26,13 +26,27 @@ import UserSavedListings from './UserSavedListings';
 import UserBookingsPage from './UserBookingsPage';
 import UserReportsPage from './UserReportsPage';
 import UserProfilePage from './UserProfilePage';
+import PropertyRecommendations from '../../components/PropertyRecommendations';
+import PropertyAlerts from '../../components/PropertyAlerts';
 import { logoutUser } from '../../../api';
 
 const UserDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [userPreferences, setUserPreferences] = useState(null);
   const { user } = useOutletContext();
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Load user preferences for recommendations
+    if (user) {
+      setUserPreferences({
+        maxBudget: 50000, // You can get this from user profile
+        preferredLocations: ['Westlands', 'Kilimani', 'Lavington'],
+        preferredTypes: ['1 Bedroom', '2 Bedroom', 'Studio']
+      });
+    }
+  }, [user]);
 
   const handleLogout = async () => {
     try {
@@ -175,6 +189,11 @@ const UserDashboard = () => {
                 <Route path="/" element={
                   <div className="space-y-6">
                     <UserDashboardStats user={user} />
+                    <PropertyRecommendations 
+                      userPreferences={userPreferences} 
+                      currentLocation={user?.location}
+                    />
+                    <PropertyAlerts userId={user?._id || user?.id} />
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-green-100 dark:border-gray-700">
                       <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Browse Properties</h2>
                       <UserListingsPage />

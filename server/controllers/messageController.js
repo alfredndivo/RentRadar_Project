@@ -7,24 +7,29 @@ import fs from 'fs';
 // 📩 Send new message (text/image)
 export const sendMessage = async (req, res) => {
   try {
-    const { receiverId, text } = req.body;
+    const { receiverId, receiverType, chatId, content } = req.body;
     const senderId = req.user._id;
+    const senderType = req.user.role;
 
-    if (!receiverId || (!text && !req.file)) {
-      return res.status(400).json({ message: 'Message content required' });
+    if (!receiverId || !receiverType || !chatId || !content) {
+      return res.status(400).json({ message: 'Missing required fields' });
     }
 
     const newMessage = new Message({
+      chatId,
       senderId,
+      senderType,
       receiverId,
-      text: text || '',
-      image: req.file ? `/uploads/messages/${req.file.filename}` : null,
+      receiverType,
+      content,
+      messageType: req.file ? 'image' : 'text',
+      image: req.file ? `/uploads/messages/${req.file.filename}` : null
     });
 
     await newMessage.save();
 
-    // 💌 Email recipient if they're offline (optional enhancement)
-    const receiver = await User.findById(receiverId);
+    // Optional: Email if user is offline (you can modify this to support landlords too)
+    const receiver = await User.findById(receiverId); // ⚠️ If receiverType is 'Landlord', use Landlord model
     if (receiver && !receiver.isOnline) {
       await sendEmail({
         to: receiver.email,
@@ -35,11 +40,13 @@ export const sendMessage = async (req, res) => {
       });
     }
 
-    res.status(201).json({ message: 'Message sent successfully' });
+    res.status(201).json({ message: 'Message sent successfully', data: newMessage });
   } catch (err) {
+    console.error('Error sending message:', err);
     res.status(500).json({ message: 'Failed to send message' });
   }
 };
+
 
 // 💬 Get messages with a specific user (conversation)
 export const getMessagesWithUser = async (req, res) => {

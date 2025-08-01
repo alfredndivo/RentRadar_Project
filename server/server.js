@@ -18,6 +18,7 @@ import adminRoutes from './routes/adminRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
+import errorHandler from './middleware/errorHandler.js';
 
 // Setup __dirname in ES6
 const __filename = fileURLToPath(import.meta.url);
@@ -91,6 +92,9 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/bookings', bookingRoutes);
 
+// Error handling middleware (must be last)
+app.use(errorHandler);
+
 // Socket.io connection handling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
@@ -125,7 +129,6 @@ app.use((req, res) => {
   console.log('404 Not Found:', req.method, req.originalUrl);
   res.status(404).json({ message: 'Route not found' });
 });
-// DB connect
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {

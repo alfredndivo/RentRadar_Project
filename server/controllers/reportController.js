@@ -3,6 +3,7 @@ import Listing from '../models/Listing.js';
 import User from '../models/User.js';
 import Landlord from '../models/Landlord.js';
 import Admin from '../models/Admin.js';
+import mongoose from 'mongoose';
 import sendEmail from '../utils/sendEmail.js';
 import { createNotification } from './notificationController.js';
 
@@ -16,10 +17,29 @@ export const submitReport = async (req, res) => {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
+    // Validate ObjectId format
+    if (!mongoose.Types.ObjectId.isValid(targetId)) {
+      return res.status(400).json({ message: 'Invalid target ID format' });
+    }
+
     // Check if already reported by this user
     const existing = await Report.findOne({ reportedBy: userId, targetType, targetId });
     if (existing) {
       return res.status(409).json({ message: 'You have already reported this item' });
+    }
+
+    // Verify target exists
+    let targetExists = false;
+    if (targetType === 'listing') {
+      const listing = await Listing.findById(targetId);
+      targetExists = !!listing;
+    } else if (targetType === 'user') {
+      const user = await User.findById(targetId) || await Landlord.findById(targetId);
+      targetExists = !!user;
+    }
+
+    if (!targetExists) {
+      return res.status(404).json({ message: `${targetType} not found` });
     }
 
     const report = new Report({

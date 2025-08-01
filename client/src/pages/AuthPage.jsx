@@ -7,6 +7,7 @@ import {registerUser,
   registerLandlord,
   loginLandlord,
   loginAdmin} from '../../api';
+import { validateEmail, validatePhone, validatePassword } from '../utils/validation';
 import DarkModeToggle from '../components/DarkModeToggle';
 
 const AuthPage = () => {
@@ -15,6 +16,7 @@ const AuthPage = () => {
   const [formData, setFormData] = useState({});
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
   const handleRoleChange = (e) => {
@@ -24,16 +26,53 @@ const AuthPage = () => {
 
   const handleInputChange = (e) => {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }));
+    
+    // Clear errors when user starts typing
+    if (errors[e.target.name]) {
+      setErrors(prev => ({ ...prev, [e.target.name]: '' }));
+    }
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!isLogin) {
+      if (!formData.name?.trim()) {
+        newErrors.name = 'Name is required';
+      }
+      
+      if (!validatePhone(formData.phone)) {
+        newErrors.phone = 'Please enter a valid Kenyan phone number';
+      }
+    }
+    
+    if (!validateEmail(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!isLogin) {
+      const passwordValidation = validatePassword(formData.password);
+      if (!passwordValidation.isValid) {
+        newErrors.password = passwordValidation.errors[0];
+      }
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
   const toggleAuthMode = () => {
     setIsLogin(prev => !prev);
     setFormData({});
+    setErrors({});
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!role) return alert('Please select a role first');
+
+    if (!validateForm()) {
+      return;
+    }
 
     setLoading(true);
     try {
@@ -121,7 +160,9 @@ const AuthPage = () => {
                     placeholder="Full Name"
                     required
                     onChange={handleInputChange}
+                    className={errors.name ? 'border-red-500' : ''}
                   />
+                  {errors.name && <p className="text-red-500 text-xs mt-1">{errors.name}</p>}
                 </div>
                 <div className="input-group">
                   <Phone className="input-icon" />
@@ -131,7 +172,9 @@ const AuthPage = () => {
                     placeholder="Phone Number"
                     required
                     onChange={handleInputChange}
+                    className={errors.phone ? 'border-red-500' : ''}
                   />
+                  {errors.phone && <p className="text-red-500 text-xs mt-1">{errors.phone}</p>}
                 </div>
               </>
             )}
@@ -143,7 +186,9 @@ const AuthPage = () => {
                 placeholder="Email Address"
                 required
                 onChange={handleInputChange}
+                className={errors.email ? 'border-red-500' : ''}
               />
+              {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
             </div>
             <div className="input-group">
               <Lock className="input-icon" />
@@ -153,6 +198,7 @@ const AuthPage = () => {
                 placeholder="Password"
                 required
                 onChange={handleInputChange}
+                className={errors.password ? 'border-red-500' : ''}
               />
               <button
                 type="button"
@@ -161,6 +207,7 @@ const AuthPage = () => {
               >
                 {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
+              {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
             </div>
 
             {isLogin && <div className="auth-forgot">Forgot password?</div>}

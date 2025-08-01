@@ -3,6 +3,7 @@ import path from 'path';
 import sharp from 'sharp';
 import Listing from '../models/Listing.js';
 import getCoordinates from '../utils/geolocation.js';
+import { checkListingAlerts } from '../utils/alertMatcher.js';
 
 const houseTypes = [
   'Single Room', 'Bedsitter', 'Studio', '1 Bedroom', '2 Bedroom', '3 Bedroom',
@@ -73,6 +74,10 @@ export const createListing = async (req, res) => {
     });
 
     const saved = await newListing.save();
+    
+    // Check for matching alerts
+    await checkListingAlerts(saved);
+    
     res.status(201).json(saved);
   } catch (err) {
     console.error(err);

@@ -9,13 +9,15 @@ export const createBooking = async (req, res) => {
     const { listingId, visitDate, visitTime, message } = req.body;
     const tenantId = req.user._id;
 
-    // Check if listing exists
     const listing = await Listing.findById(listingId).populate('landlord');
     if (!listing) {
       return res.status(404).json({ message: 'Listing not found' });
     }
 
-    // Check if user already has a pending booking for this listing
+    if (!listing.landlord) {
+      return res.status(400).json({ message: 'Listing does not have a landlord assigned' });
+    }
+
     const existingBooking = await Booking.findOne({
       tenant: tenantId,
       listing: listingId,
@@ -38,7 +40,6 @@ export const createBooking = async (req, res) => {
     await booking.save();
     await booking.populate(['tenant', 'landlord', 'listing']);
 
-    // Emit socket event to landlord
     const io = req.app.get('io');
     if (io) {
       io.to(`user:${listing.landlord._id}`).emit('newBooking', {
@@ -53,6 +54,7 @@ export const createBooking = async (req, res) => {
     res.status(500).json({ message: 'Failed to create booking' });
   }
 };
+
 
 // Get user's bookings
 export const getUserBookings = async (req, res) => {

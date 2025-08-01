@@ -1,14 +1,16 @@
 import React, { useState } from 'react';
-import { X, MapPin, Bed, Bath, Heart, MessageCircle, Share2, Calendar, Phone, Mail } from 'lucide-react';
+import { X, MapPin, Bed, Bath, Heart, MessageCircle, Share2, Calendar, Phone, Mail, Flag } from 'lucide-react';
 import { toast } from 'sonner';
 import LocationMap from '../../components/LocationMap';
 import ImageLightbox from '../../components/ImageLightbox';
+import ReportModal from './ReportModal';
 
 
 const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [showReportModal, setShowReportModal] = useState(false);
 
 
   const getImageUrl = (imagePath) => {
@@ -246,6 +248,15 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
                   </button>
                 </div>
 
+                {/* Report Button */}
+                <button
+                  onClick={() => setShowReportModal(true)}
+                  className="w-full flex items-center justify-center gap-2 bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 py-2 px-4 rounded-xl hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
+                >
+                  <Flag className="w-4 h-4" />
+                  Report Listing
+                </button>
+
                 {/* Alternative Contact Methods */}
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <p className="text-sm text-gray-600 mb-3">
@@ -316,6 +327,16 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
         onClose={() => setLightboxOpen(false)}
         initialIndex={lightboxIndex}
       />
+      
+      {/* Report Modal */}
+      {showReportModal && (
+        <ReportModal
+          isOpen={showReportModal}
+          onClose={() => setShowReportModal(false)}
+          targetId={listing._id}
+          targetType="listing"
+        />
+      )}
     </div>
   );
 };

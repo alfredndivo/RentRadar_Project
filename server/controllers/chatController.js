@@ -26,17 +26,11 @@ export const createOrGetChat = async (req, res) => {
     }
 
     // Populate participants
-    await chat.populate([
-      {
-        path: 'participants',
-        populate: {
-          path: 'participants',
-          model: function(doc) {
-            return doc.participantTypes[doc.participants.indexOf(this._id)] || 'User';
-          }
-        }
-      }
-    ]);
+     await chat.populate({
+      path: "participants",
+      select: "name email role",
+      });
+
 
     res.json(chat);
   } catch (error) {
