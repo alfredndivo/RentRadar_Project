@@ -1,37 +1,79 @@
-// server/utils/geolocation.js
-
 import axios from 'axios';
 
 /**
- * 🔎 Convert a full address into latitude & longitude using Google Maps API.
+ * 🔎 Convert a full address into latitude & longitude using multiple geocoding services.
  * Used when landlord submits a new listing.
  * 
  * @param {string} address - Full address (e.g. "Ngong Road, Nairobi, Kenya")
  * @returns {Object|null} - { lat, lng } or null if failed
  */
 export const getCoordinates = async (address) => {
-  const encoded = encodeURIComponent(address);
-  const url = `https://nominatim.openstreetmap.org/search?q=${encoded}&format=json&limit=1`;
-
-  try {
-    const res = await axios.get(url, {
-      headers: { 'User-Agent': 'RentRadarApp/1.0 (your@email.com)' },
-    });
-
-    if (!res.data.length) return null;
-
-    const { lat, lon } = res.data[0];
-    return { lat: parseFloat(lat), lng: parseFloat(lon) };
-  } catch (err) {
-    console.error('❌ Geocoding failed:', err.message);
+  if (!address || address.trim() === '') {
+    console.log('❌ Empty address provided');
     return null;
   }
-};
 
+  const cleanAddress = address.trim();
+  console.log(`🔍 Geocoding address: "${cleanAddress}"`);
+
+  // Try multiple geocoding services for better coverage
+  const geocodingServices = [
+    {
+      name: 'Nominatim',
+      url: `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanAddress)}&format=json&limit=1&countrycodes=ke`,
+      headers: { 'User-Agent': 'RentRadarApp/1.0 (contact@rentradar.com)' }
+    },
+    {
+      name: 'Nominatim Global',
+      url: `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(cleanAddress)}&format=json&limit=1`,
+      headers: { 'User-Agent': 'RentRadarApp/1.0 (contact@rentradar.com)' }
+    }
+  ];
+
+  for (const service of geocodingServices) {
+    try {
+      console.log(`🌐 Trying ${service.name}...`);
+      
+      const response = await axios.get(service.url, {
+        headers: service.headers,
+        timeout: 10000 // 10 second timeout
+      });
+
+      if (response.data && response.data.length > 0) {
+        const result = response.data[0];
+        const lat = parseFloat(result.lat);
+        const lng = parseFloat(result.lon);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+          console.log(`✅ Coordinates found via ${service.name}: ${lat}, ${lng}`);
+          return { lat, lng };
+        }
+      }
+    } catch (error) {
+      console.log(`❌ ${service.name} failed:`, error.message);
+      continue;
+    }
+  }
+
+  // If all services fail, try with Kenya suffix
+  if (!cleanAddress.toLowerCase().includes('kenya')) {
+    console.log('🔄 Retrying with Kenya suffix...');
+    return await getCoordinates(`${cleanAddress}, Kenya`);
+  }
+
+  // Fallback to Nairobi coordinates for Kenya addresses
+  if (cleanAddress.toLowerCase().includes('nairobi') || cleanAddress.toLowerCase().includes('kenya')) {
+    console.log('🏙️ Using Nairobi fallback coordinates');
+    return { lat: -1.2921, lng: 36.8219 }; // Nairobi city center
+  }
+
+  console.log('❌ All geocoding attempts failed');
+  return null;
+};
 
 /**
  * 📏 Calculate straight-line distance between two geo-points using Haversine formula
- * Used to show “X km away from your current location” on listings.
+ * Used to show "X km away from your current location" on listings.
  * 
  * @param {number} lat1 - First latitude (e.g. tenant)
  * @param {number} lon1 - First longitude

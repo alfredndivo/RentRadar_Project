@@ -72,23 +72,30 @@ export const sendMessage = async (req, res) => {
       }
     }
 
+    // Determine message type based on file
+    let messageType = 'text';
+    if (req.file) {
+      messageType = req.file.mimetype.startsWith('image/') ? 'image' : 'file';
+    }
+
     const message = new Message({
       senderId,
       senderType,
       receiverId: receiverId || chat.participants.find(p => !p.equals(senderId)),
       receiverType,
       chatId: chat._id,
-      content,
+      content: content || '',
       attachments: req.file ? [req.file.filename] : [],
-      messageType: req.file ? 'image' : 'text'
+      messageType
     });
 
     await message.save();
 
     // Update chat
     chat.lastMessage = message._id;
-    const currentUnreadCount = chat.unreadCount.get(receiverId.toString()) || 0;
-    chat.unreadCount.set(receiverId.toString(), currentUnreadCount + 1);
+    const targetReceiverId = receiverId || chat.participants.find(p => !p.equals(senderId));
+    const currentUnreadCount = chat.unreadCount.get(targetReceiverId.toString()) || 0;
+    chat.unreadCount.set(targetReceiverId.toString(), currentUnreadCount + 1);
     await chat.save();
 
     // Populate message for response
@@ -100,8 +107,12 @@ export const sendMessage = async (req, res) => {
     // Emit socket event
     const io = req.app.get('io');
     if (io) {
-      const roomId = `chat:${Math.min(senderId, receiverId)}-${Math.max(senderId, receiverId)}`;
-      io.to(roomId).emit('receiveMessage', message);
+      io.to(`chat:${chat._id}`).emit('receiveMessage', message);
+      io.to(`user:${targetReceiverId}`).emit('newMessage', {
+        chatId: chat._id,
+        message: message.content || 'Sent an attachment',
+        senderName: req.user.name || req.user.username
+      });
     }
 
     res.status(201).json(message);

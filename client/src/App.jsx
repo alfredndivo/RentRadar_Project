@@ -15,6 +15,7 @@ import AdminReportsPage from './pages/AdminDashboard/AdminReportsPage';
 import AdminDashboard from './pages/AdminDashboard/AdminDashboard';
 import AdminUsersPage from './pages/AdminDashboard/AdminUsersPage';
 import AdminAnalyticsPage from './pages/AdminDashboard/AdminAnalyticsPage';
+import AdminModerationPage from './pages/AdminDashboard/AdminModerationPage';
 
 import RequireAuth from './components/RequireAuth';
 
@@ -48,6 +49,7 @@ function App() {
         <Route path="/admin/reports" element={<AdminReportsPage />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+        <Route path="/admin/moderation" element={<AdminModerationPage />} />
       </Route>
 
       {/* Catch-all route */}

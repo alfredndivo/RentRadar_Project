@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageSquare, Search, Phone, Video, Clock, MoreVertical } from 'lucide-react';
+import { Send, MessageSquare, Search, Phone, Video, Clock, MoreVertical, Paperclip, Smile, Image, File } from 'lucide-react';
 import { toast } from 'sonner';
 import { getChats, getChatMessages, sendChatMessage, markMessagesAsSeen, getCurrentUser } from '../../../api';
 import { MessageSkeleton } from '../../components/SkeletonLoader';
@@ -16,9 +16,16 @@ const UserMessagesPage = () => {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [isTyping, setIsTyping] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
   
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
+  const fileInputRef = useRef(null);
+
+  // Common emojis for quick access
+  const commonEmojis = ['😊', '😂', '❤️', '👍', '👎', '😢', '😮', '😡', '🎉', '🔥', '💯', '🏠', '💰', '📍', '✅', '❌'];
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -110,18 +117,42 @@ const UserMessagesPage = () => {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !selectedChat) return;
+    if ((!newMessage.trim() && !selectedFile) || !selectedChat) return;
 
     setSendingMessage(true);
     try {
-      const response = await sendChatMessage({
+      const messageData = {
         chatId: selectedChat._id,
         receiverId: selectedChat.participant._id,
         content: newMessage
-      });
+      };
 
-      setMessages(prev => [...prev, response.data]);
+      // Handle file attachment
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append('chatId', selectedChat._id);
+        formData.append('receiverId', selectedChat.participant._id);
+        formData.append('content', newMessage || '');
+        formData.append('attachment', selectedFile);
+
+        const response = await fetch('/api/chats/send', {
+          method: 'POST',
+          credentials: 'include',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Failed to send message');
+        const result = await response.json();
+        setMessages(prev => [...prev, result]);
+      } else {
+        const response = await sendChatMessage(messageData);
+        setMessages(prev => [...prev, response.data]);
+      }
+
       setNewMessage('');
+      setSelectedFile(null);
+      setShowEmojiPicker(false);
+      setShowAttachmentMenu(false);
       scrollToBottom();
       
       // Stop typing indicator
@@ -161,6 +192,43 @@ const UserMessagesPage = () => {
     } else if (!e.target.value.trim() && isTyping) {
       handleTyping(false);
     }
+  };
+
+  const handleEmojiSelect = (emoji) => {
+    setNewMessage(prev => prev + emoji);
+    setShowEmojiPicker(false);
+  };
+
+  const handleFileSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+        toast.error('File size must be less than 10MB');
+        return;
+      }
+      setSelectedFile(file);
+      setShowAttachmentMenu(false);
+    }
+  };
+
+  const removeSelectedFile = () => {
+    setSelectedFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const getFileIcon = (fileType) => {
+    if (fileType.startsWith('image/')) return <Image className="w-4 h-4" />;
+    return <File className="w-4 h-4" />;
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const filteredChats = chats.filter(chat =>
@@ -352,7 +420,28 @@ const UserMessagesPage = () => {
                                 ? 'bg-green-500 text-white'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                             }`}>
-                              <p>{message.content}</p>
+                              {/* Message content */}
+                              {message.content && <p className="mb-1">{message.content}</p>}
+                              
+                              {/* File attachment */}
+                              {message.attachments && message.attachments.length > 0 && (
+                                <div className="mt-2">
+                                  {message.messageType === 'image' ? (
+                                    <img
+                                      src={`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/messages/${message.attachments[0]}`}
+                                      alt="Shared image"
+                                      className="max-w-full h-auto rounded-lg cursor-pointer"
+                                      onClick={() => window.open(`${import.meta.env.VITE_API_BASE_URL?.replace('/api', '') || 'http://localhost:5000'}/uploads/messages/${message.attachments[0]}`, '_blank')}
+                                    />
+                                  ) : (
+                                    <div className="flex items-center gap-2 p-2 bg-white/10 rounded-lg">
+                                      <File className="w-4 h-4" />
+                                      <span className="text-sm">{message.attachments[0]}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
                               <div className={`flex items-center justify-between mt-1 ${
                                 isOwn ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
                               }`}>
@@ -371,6 +460,23 @@ const UserMessagesPage = () => {
                         </div>
                       );
                     })}
+                    
+                    {/* Typing indicator */}
+                    {typingUsers.size > 0 && (
+                      <div className="flex justify-start">
+                        <div className="bg-gray-100 dark:bg-gray-700 px-4 py-2 rounded-2xl">
+                          <div className="flex items-center gap-1">
+                            <div className="flex gap-1">
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            </div>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">typing...</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    
                     <div ref={messagesEndRef} />
                   </>
                 )}
@@ -378,7 +484,89 @@ const UserMessagesPage = () => {
 
               {/* Message Input */}
               <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+                {/* File preview */}
+                {selectedFile && (
+                  <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {getFileIcon(selectedFile.type)}
+                      <div>
+                        <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedFile.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{formatFileSize(selectedFile.size)}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={removeSelectedFile}
+                      className="text-red-500 hover:text-red-700 p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+
+                {/* Emoji picker */}
+                {showEmojiPicker && (
+                  <div className="mb-3 p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg">
+                    <div className="grid grid-cols-8 gap-2">
+                      {commonEmojis.map((emoji, index) => (
+                        <button
+                          key={index}
+                          onClick={() => handleEmojiSelect(emoji)}
+                          className="text-xl hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded transition-colors"
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Attachment menu */}
+                {showAttachmentMenu && (
+                  <div className="mb-3 p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg">
+                    <div className="space-y-2">
+                      <button
+                        onClick={() => {
+                          fileInputRef.current?.click();
+                          setShowAttachmentMenu(false);
+                        }}
+                        className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                      >
+                        <Image className="w-5 h-5 text-blue-500" />
+                        <span className="text-gray-900 dark:text-white">Photo or Image</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          fileInputRef.current?.click();
+                          setShowAttachmentMenu(false);
+                        }}
+                        className="w-full flex items-center gap-3 p-2 hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors"
+                      >
+                        <File className="w-5 h-5 text-green-500" />
+                        <span className="text-gray-900 dark:text-white">Document</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 <form onSubmit={handleSendMessage} className="flex gap-3">
+                  {/* Hidden file input */}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*,.pdf,.doc,.docx,.txt"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+
+                  {/* Attachment button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
+                    className="p-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                  >
+                    <Paperclip className="w-5 h-5" />
+                  </button>
+
                   <input
                     type="text"
                     value={newMessage}
@@ -387,9 +575,19 @@ const UserMessagesPage = () => {
                     className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     disabled={sendingMessage}
                   />
+
+                  {/* Emoji button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                    className="p-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                  >
+                    <Smile className="w-5 h-5" />
+                  </button>
+
                   <button
                     type="submit"
-                    disabled={sendingMessage || !newMessage.trim()}
+                    disabled={sendingMessage || (!newMessage.trim() && !selectedFile)}
                     className="bg-green-500 text-white p-3 rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {sendingMessage ? (

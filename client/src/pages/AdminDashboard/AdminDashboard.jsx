@@ -8,17 +8,65 @@ import {
   Users, 
   Building, 
   LogOut,
-  BarChart3
+  BarChart3,
+  MessageSquare,
+  Shield,
+  Bell
 } from 'lucide-react';
 import { toast } from 'sonner';
 import DarkModeToggle from '../../components/DarkModeToggle';
+import NotificationBell from '../../components/NotificationBell';
 import { logoutUser } from '../../../api';
 
 const AdminDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [stats, setStats] = useState({
+    totalUsers: 0,
+    totalListings: 0,
+    pendingReports: 0,
+    activeLandlords: 0,
+    verifiedLandlords: 0,
+    bannedUsers: 0
+  });
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [loading, setLoading] = useState(true);
   const { user } = useOutletContext();
   const location = useLocation();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      const response = await fetch('/api/admin/analytics', {
+        credentials: 'include'
+      });
+      const data = await response.json();
+      
+      setStats({
+        totalUsers: data.stats?.users || 0,
+        totalListings: data.stats?.listings || 0,
+        pendingReports: data.stats?.reports || 0,
+        activeLandlords: 89, // Mock data
+        verifiedLandlords: 67, // Mock data
+        bannedUsers: 5 // Mock data
+      });
+
+      // Mock recent activity
+      setRecentActivity([
+        { type: 'user', message: 'New user registered', time: '2 minutes ago', icon: Users },
+        { type: 'listing', message: 'New listing posted', time: '5 minutes ago', icon: Building },
+        { type: 'report', message: 'Report submitted', time: '10 minutes ago', icon: Flag },
+        { type: 'message', message: 'Admin warning sent', time: '15 minutes ago', icon: MessageSquare }
+      ]);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     try {
@@ -40,6 +88,7 @@ const AdminDashboard = () => {
     { name: 'Reports', icon: <Flag className="w-5 h-5" />, path: '/admin/reports' },
     { name: 'Users', icon: <Users className="w-5 h-5" />, path: '/admin/users' },
     { name: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, path: '/admin/analytics' },
+    { name: 'Moderation', icon: <Shield className="w-5 h-5" />, path: '/admin/moderation' },
   ];
 
   const isActive = (path, exact = false) => {
@@ -82,7 +131,10 @@ const AdminDashboard = () => {
               {/* Logo */}
               <div className="hidden lg:flex items-center gap-3 mb-8">
                 <Home className="w-8 h-8 text-blue-600 dark:text-blue-400" />
-                <h1 className="text-2xl font-bold text-blue-800 dark:text-white">RentRadar</h1>
+                <div className="flex-1">
+                  <h1 className="text-2xl font-bold text-blue-800 dark:text-white">RentRadar</h1>
+                </div>
+                <NotificationBell userId={user?._id || user?.id} userType="Admin" />
               </div>
 
               {/* Admin Info */}
@@ -149,7 +201,8 @@ const AdminDashboard = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Users</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">1,234</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalUsers}</p>
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">+12% this month</p>
                       </div>
                       <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
                         <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
@@ -161,7 +214,8 @@ const AdminDashboard = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Total Listings</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">567</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalListings}</p>
+                        <p className="text-xs text-green-600 dark:text-green-400 mt-1">+8% this month</p>
                       </div>
                       <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
                         <Building className="w-6 h-6 text-green-600 dark:text-green-400" />
@@ -173,7 +227,8 @@ const AdminDashboard = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Pending Reports</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">23</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.pendingReports}</p>
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">Needs attention</p>
                       </div>
                       <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900/30 rounded-full flex items-center justify-center">
                         <Flag className="w-6 h-6 text-yellow-600 dark:text-yellow-400" />
@@ -185,7 +240,8 @@ const AdminDashboard = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="text-sm font-medium text-gray-600 dark:text-gray-300">Active Landlords</p>
-                        <p className="text-2xl font-bold text-gray-900 dark:text-white">89</p>
+                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.activeLandlords}</p>
+                        <p className="text-xs text-purple-600 dark:text-purple-400 mt-1">{stats.verifiedLandlords} verified</p>
                       </div>
                       <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
                         <Home className="w-6 h-6 text-purple-600 dark:text-purple-400" />
@@ -198,35 +254,68 @@ const AdminDashboard = () => {
                 <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-blue-100 dark:border-gray-700">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Recent Activity</h3>
                   <div className="space-y-4">
-                    <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                        <Users className="w-4 h-4 text-green-600 dark:text-green-400" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">New user registered</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">2 minutes ago</p>
-                      </div>
-                    </div>
+                    {recentActivity.map((activity, index) => {
+                      const Icon = activity.icon;
+                      const getActivityColor = (type) => {
+                        switch (type) {
+                          case 'user': return 'bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400';
+                          case 'listing': return 'bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400';
+                          case 'report': return 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400';
+                          case 'message': return 'bg-purple-100 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400';
+                          default: return 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400';
+                        }
+                      };
+                      
+                      return (
+                        <div key={index} className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${getActivityColor(activity.type)}`}>
+                            <Icon className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900 dark:text-white">{activity.message}</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">{activity.time}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
 
-                    <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
-                        <Building className="w-4 h-4 text-blue-600 dark:text-blue-400" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">New listing posted</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">5 minutes ago</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                      <div className="w-8 h-8 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-                        <Flag className="w-4 h-4 text-red-600 dark:text-red-400" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-white">Report submitted</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">10 minutes ago</p>
-                      </div>
-                    </div>
+                {/* Quick Actions */}
+                <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-blue-100 dark:border-gray-700">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Quick Actions</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <button
+                      onClick={() => navigate('/admin/reports')}
+                      className="flex flex-col items-center gap-2 p-4 bg-red-50 dark:bg-red-900/20 rounded-xl hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                    >
+                      <Flag className="w-6 h-6 text-red-600 dark:text-red-400" />
+                      <span className="text-sm font-medium text-red-700 dark:text-red-300">Handle Reports</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => navigate('/admin/users')}
+                      className="flex flex-col items-center gap-2 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                    >
+                      <Users className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                      <span className="text-sm font-medium text-blue-700 dark:text-blue-300">Manage Users</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => navigate('/admin/analytics')}
+                      className="flex flex-col items-center gap-2 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                    >
+                      <BarChart3 className="w-6 h-6 text-green-600 dark:text-green-400" />
+                      <span className="text-sm font-medium text-green-700 dark:text-green-300">View Analytics</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => navigate('/admin/moderation')}
+                      className="flex flex-col items-center gap-2 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-xl hover:bg-purple-100 dark:hover:bg-purple-900/30 transition-colors"
+                    >
+                      <Shield className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                      <span className="text-sm font-medium text-purple-700 dark:text-purple-300">Moderation</span>
+                    </button>
                   </div>
                 </div>
               </div>

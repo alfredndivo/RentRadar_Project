@@ -9,7 +9,8 @@ import {
   Mail, 
   FileText, 
   Flag,
-  Building
+  Building,
+  Calendar
 } from 'lucide-react';
 import { toast } from 'sonner';
 import DarkModeToggle from '../../components/DarkModeToggle';

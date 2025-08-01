@@ -155,6 +155,27 @@ const ListingsPage = () => {
     }
   };
 
+  const toggleListingStatus = async (listingId, field) => {
+    try {
+      const listing = listings.find(l => l._id === listingId);
+      const updatedValue = !listing[field];
+      
+      const formData = new FormData();
+      formData.append(field, updatedValue);
+      
+      const response = await updateListing(listingId, formData);
+      
+      setListings(prev => prev.map(l => 
+        l._id === listingId ? { ...l, [field]: updatedValue } : l
+      ));
+      
+      toast.success(`Listing ${updatedValue ? 'activated' : 'deactivated'} successfully`);
+    } catch (error) {
+      console.error('Error toggling listing status:', error);
+      toast.error('Failed to update listing status');
+    }
+  };
+
   const previewMap = async (location) => {
     if (!location) return;
 
@@ -366,17 +387,53 @@ const ListingsPage = () => {
                         <span>{listing.bathrooms}</span>
                       </div>
                     )}
+                    <div className="flex items-center gap-1">
+                      <Eye className="w-4 h-4" />
+                      <span>{listing.views || 0}</span>
+                    </div>
                   </div>
 
                   <p className="text-lg font-bold text-green-600 dark:text-green-400 mb-3">
                     KES {listing.price?.toLocaleString()}
                   </p>
 
+                  {/* Status indicators */}
+                  <div className="flex gap-2 mb-3">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      listing.isActive 
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-400'
+                    }`}>
+                      {listing.isActive ? 'Active' : 'Inactive'}
+                    </span>
+                    {listing.isBanned && (
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400">
+                        Banned
+                      </span>
+                    )}
+                    {listing.isOccupied && (
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">
+                        Occupied
+                      </span>
+                    )}
+                  </div>
+
                   <p className="text-xs text-gray-400 dark:text-gray-500 mb-4">
                     Posted: {new Date(listing.createdAt).toLocaleDateString()}
                   </p>
 
                   <div className="flex justify-between items-center gap-2">
+                    <button
+                      onClick={() => toggleListingStatus(listing._id, 'isActive')}
+                      className={`flex items-center gap-1 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        listing.isActive
+                          ? 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                          : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                      }`}
+                    >
+                      <Eye className="w-4 h-4" />
+                      {listing.isActive ? 'Deactivate' : 'Activate'}
+                    </button>
                     <button
                       onClick={() => handleEdit(listing._id)}
                       className="flex items-center gap-1 bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded-lg text-sm transition-colors"

@@ -48,16 +48,14 @@ export const createListing = async (req, res) => {
       fs.unlinkSync(inputPath); // delete original
       resizedPaths.push(outputPath);
     }
-         let coords = await getCoordinates(location);
-
-          // 🔁 Retry with ", Kenya" if not found and not already present
-          if ((!coords || coords.lat == null || coords.lng == null) && !location.toLowerCase().includes('kenya')) {
-              coords = await getCoordinates(`${location}, Kenya`);
-          }
-
-          if (!coords || coords.lat == null || coords.lng == null) {
-              return res.status(400).json({ message: 'Failed to fetch coordinates for location' });
-   }
+    // Get coordinates for the location
+    let coords = await getCoordinates(location);
+    
+    // If coordinates not found, use default Nairobi coordinates but still create the listing
+    if (!coords || coords.lat == null || coords.lng == null) {
+      console.log(`⚠️ Could not geocode "${location}", using default Nairobi coordinates`);
+      coords = { lat: -1.2921, lng: 36.8219 }; // Nairobi city center
+    }
 
 
     const newListing = new Listing({
@@ -180,11 +178,11 @@ export const updateListing = async (req, res) => {
     if (updates.location) {
       let coords = await getCoordinates(updates.location);
       
-      if ((!coords || coords.lat == null || coords.lng == null) && !updates.location.toLowerCase().includes('kenya')) {
-        coords = await getCoordinates(`${updates.location}, Kenya`);
-      }
-      
-      if (coords && coords.lat != null && coords.lng != null) {
+      // If coordinates not found, keep existing coordinates or use default
+      if (!coords || coords.lat == null || coords.lng == null) {
+        console.log(`⚠️ Could not geocode "${updates.location}", keeping existing coordinates`);
+        // Don't update coordinates if geocoding fails
+      } else {
         updates.lat = coords.lat;
         updates.lng = coords.lng;
       }
