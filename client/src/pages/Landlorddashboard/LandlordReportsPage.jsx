@@ -23,6 +23,7 @@ const LandlordReportsPage = () => {
       setReports(response.data || []);
     } catch (error) {
       console.error('Error fetching reports:', error);
+      toast.error('Failed to load reports');
       setReports([]);
     } finally {
       setLoading(false);
@@ -37,7 +38,7 @@ const LandlordReportsPage = () => {
       setShowReportModal(false);
     } catch (error) {
       console.error('Error submitting report:', error);
-      toast.error('Failed to submit report');
+      toast.error(error.response?.data?.message || 'Failed to submit report');
     }
   };
 

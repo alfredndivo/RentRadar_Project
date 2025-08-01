@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, Flag } from 'lucide-react';
 import { toast } from 'sonner';
+import { submitReport } from '../../../api';
 
 const ReportModal = ({ isOpen, onClose, onSubmit, targetId, targetType }) => {
   const [formData, setFormData] = useState({
@@ -32,9 +33,16 @@ const ReportModal = ({ isOpen, onClose, onSubmit, targetId, targetType }) => {
 
     setLoading(true);
     try {
-      await onSubmit(formData);
+      if (onSubmit) {
+        await onSubmit(formData);
+      } else {
+        await submitReport(formData);
+        toast.success('Report submitted successfully');
+        onClose();
+      }
     } catch (error) {
       console.error('Error submitting report:', error);
+      toast.error(error.response?.data?.message || 'Failed to submit report');
     } finally {
       setLoading(false);
     }

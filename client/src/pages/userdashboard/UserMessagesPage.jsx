@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageSquare, Search, Phone, Video, Clock, MoreVertical, Paperclip, Smile, Image, File } from 'lucide-react';
+import { Send, MessageSquare, Search, Phone, Video, Clock, MoreVertical, Paperclip, Smile, Image, File, CheckCircle, Circle, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { getChats, getChatMessages, sendChatMessage, markMessagesAsSeen, getCurrentUser } from '../../../api';
 import { MessageSkeleton } from '../../components/SkeletonLoader';
@@ -19,13 +19,17 @@ const UserMessagesPage = () => {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [messageReactions, setMessageReactions] = useState({});
+  const [showMessageActions, setShowMessageActions] = useState(null);
   
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
   const fileInputRef = useRef(null);
 
   // Common emojis for quick access
-  const commonEmojis = ['😊', '😂', '❤️', '👍', '👎', '😢', '😮', '😡', '🎉', '🔥', '💯', '🏠', '💰', '📍', '✅', '❌'];
+  const commonEmojis = ['😊', '😂', '❤️', '👍', '👎', '😢', '😮', '😡', '🎉', '🔥', '💯', '🏠', '💰', '📍', '✅', '❌', '🤝', '🙏', '💪', '⭐'];
+  const reactionEmojis = ['👍', '❤️', '😂', '😮', '😢', '😡'];
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -64,6 +68,31 @@ const UserMessagesPage = () => {
             return newSet;
           });
         });
+
+        // Listen for user online status
+        if (socketService.socket) {
+          socketService.socket.on('userOnline', (userId) => {
+            setOnlineUsers(prev => new Set(prev).add(userId));
+          });
+
+          socketService.socket.on('userOffline', (userId) => {
+            setOnlineUsers(prev => {
+              const newSet = new Set(prev);
+              newSet.delete(userId);
+              return newSet;
+            });
+          });
+
+          socketService.socket.on('messageReaction', ({ messageId, reaction, userId }) => {
+            setMessageReactions(prev => ({
+              ...prev,
+              [messageId]: {
+                ...prev[messageId],
+                [reaction]: [...(prev[messageId]?.[reaction] || []), userId]
+              }
+            }));
+          });
+        }
 
         await fetchChats();
       } catch (error) {
@@ -231,6 +260,34 @@ const UserMessagesPage = () => {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
+  const isUserOnline = (userId) => {
+    return onlineUsers.has(userId);
+  };
+
+  const handleMessageReaction = (messageId, reaction) => {
+    // Emit reaction to socket
+    if (socketService.socket) {
+      socketService.socket.emit('addReaction', { messageId, reaction, chatId: selectedChat._id });
+    }
+    
+    // Update local state
+    setMessageReactions(prev => ({
+      ...prev,
+      [messageId]: {
+        ...prev[messageId],
+        [reaction]: [...(prev[messageId]?.[reaction] || []), currentUserId]
+      }
+    }));
+  };
+
+  const copyMessageText = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      toast.success('Message copied to clipboard');
+    }).catch(() => {
+      toast.error('Failed to copy message');
+    });
+  };
+
   const filteredChats = chats.filter(chat =>
     chat.participant?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     chat.participant?.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -320,10 +377,17 @@ const UserMessagesPage = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center relative">
-                        <span className="text-white font-semibold">
-                          {chat.participant?.name?.charAt(0) || 'L'}
-                        </span>
+                      <div className="relative">
+                        <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
+                          <span className="text-white font-semibold">
+                            {chat.participant?.name?.charAt(0) || 'L'}
+                          </span>
+                        </div>
+                        {/* Online indicator */}
+                        {isUserOnline(chat.participant?._id) && (
+                          <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                        )}
+                        {/* Unread count */}
                         {chat.unreadCount > 0 && (
                           <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
                             {chat.unreadCount}
@@ -341,9 +405,14 @@ const UserMessagesPage = () => {
                             </span>
                           )}
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
-                          {chat.lastMessage?.content || 'No messages yet'}
-                        </p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-sm text-gray-600 dark:text-gray-300 truncate">
+                            {chat.lastMessage?.content || 'No messages yet'}
+                          </p>
+                          {isUserOnline(chat.participant?._id) && (
+                            <span className="text-xs text-green-500 dark:text-green-400">Online</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </button>
@@ -360,10 +429,15 @@ const UserMessagesPage = () => {
               {/* Chat Header */}
               <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
-                    <span className="text-white font-semibold">
-                      {selectedChat.participant?.name?.charAt(0) || 'L'}
-                    </span>
+                  <div className="relative">
+                    <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
+                      <span className="text-white font-semibold">
+                        {selectedChat.participant?.name?.charAt(0) || 'L'}
+                      </span>
+                    </div>
+                    {isUserOnline(selectedChat.participant?._id) && (
+                      <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
+                    )}
                   </div>
                   <div>
                     <p className="font-medium text-gray-900 dark:text-white">
@@ -372,6 +446,11 @@ const UserMessagesPage = () => {
                     <p className="text-sm text-gray-600 dark:text-gray-300 flex items-center gap-1">
                       <Clock className="w-3 h-3" />
                       Landlord
+                      {isUserOnline(selectedChat.participant?._id) ? (
+                        <span className="text-green-500 ml-2">Online</span>
+                      ) : (
+                        <span className="text-gray-400 ml-2">Offline</span>
+                      )}
                       {typingUsers.size > 0 && (
                         <span className="text-green-500 ml-2">Typing...</span>
                       )}
@@ -415,11 +494,53 @@ const UserMessagesPage = () => {
                             </div>
                           )}
                           <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'}`}>
-                            <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
+                            <div 
+                              className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl relative group ${
                               isOwn
                                 ? 'bg-green-500 text-white'
                                 : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
-                            }`}>
+                            }`}
+                              onDoubleClick={() => message.content && copyMessageText(message.content)}
+                            >
+                              {/* Message actions menu */}
+                              <button
+                                onClick={() => setShowMessageActions(showMessageActions === message._id ? null : message._id)}
+                                className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 rounded-full hover:bg-black/10 transition-all"
+                              >
+                                <MoreVertical className="w-3 h-3" />
+                              </button>
+
+                              {/* Message actions dropdown */}
+                              {showMessageActions === message._id && (
+                                <div className="absolute top-8 right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg z-10 min-w-32">
+                                  <button
+                                    onClick={() => {
+                                      copyMessageText(message.content);
+                                      setShowMessageActions(null);
+                                    }}
+                                    className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-900 dark:text-white"
+                                  >
+                                    Copy
+                                  </button>
+                                  <div className="border-t border-gray-200 dark:border-gray-600 p-2">
+                                    <div className="flex gap-1">
+                                      {reactionEmojis.map(emoji => (
+                                        <button
+                                          key={emoji}
+                                          onClick={() => {
+                                            handleMessageReaction(message._id, emoji);
+                                            setShowMessageActions(null);
+                                          }}
+                                          className="text-lg hover:bg-gray-100 dark:hover:bg-gray-600 p-1 rounded"
+                                        >
+                                          {emoji}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
                               {/* Message content */}
                               {message.content && <p className="mb-1">{message.content}</p>}
                               
@@ -442,6 +563,22 @@ const UserMessagesPage = () => {
                                 </div>
                               )}
                               
+                              {/* Message reactions */}
+                              {messageReactions[message._id] && Object.keys(messageReactions[message._id]).length > 0 && (
+                                <div className="flex gap-1 mt-2">
+                                  {Object.entries(messageReactions[message._id]).map(([reaction, users]) => (
+                                    users.length > 0 && (
+                                      <span
+                                        key={reaction}
+                                        className="text-xs bg-white/20 px-2 py-1 rounded-full flex items-center gap-1"
+                                      >
+                                        {reaction} {users.length}
+                                      </span>
+                                    )
+                                  ))}
+                                </div>
+                              )}
+
                               <div className={`flex items-center justify-between mt-1 ${
                                 isOwn ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'
                               }`}>
@@ -450,8 +587,16 @@ const UserMessagesPage = () => {
                                 </span>
                                 {isOwn && (
                                   <span className="text-xs ml-2">
-                                    {message.status === 'seen' ? '✓✓' : 
-                                     message.status === 'delivered' ? '✓' : '○'}
+                                    {message.status === 'seen' ? (
+                                      <div className="flex">
+                                        <CheckCircle className="w-3 h-3" />
+                                        <CheckCircle className="w-3 h-3 -ml-1" />
+                                      </div>
+                                    ) : message.status === 'delivered' ? (
+                                      <CheckCircle className="w-3 h-3" />
+                                    ) : (
+                                      <Circle className="w-3 h-3" />
+                                    )}
                                   </span>
                                 )}
                               </div>
@@ -506,7 +651,7 @@ const UserMessagesPage = () => {
                 {/* Emoji picker */}
                 {showEmojiPicker && (
                   <div className="mb-3 p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg">
-                    <div className="grid grid-cols-8 gap-2">
+                    <div className="grid grid-cols-10 gap-2">
                       {commonEmojis.map((emoji, index) => (
                         <button
                           key={index}

@@ -89,7 +89,18 @@ const LandlordDashboard = () => {
             <div className="p-6 h-full overflow-y-auto">
               {/* Logo */}
               <div className="hidden lg:flex items-center gap-3 mb-8">
-                <Home className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+                <img 
+                  src="/rentradar.png.png" 
+                  alt="RentRadar" 
+                  className="w-8 h-8"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
+                />
+                <div className="w-8 h-8 bg-blue-500 rounded-full items-center justify-center hidden">
+                  <Home className="w-6 h-6 text-white" />
+                </div>
                 <div className="flex-1">
                   <h1 className="text-2xl font-bold text-blue-800 dark:text-white">RentRadar</h1>
                 </div>

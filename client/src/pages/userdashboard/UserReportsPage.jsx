@@ -34,7 +34,7 @@ const UserReportsPage = () => {
       setShowReportModal(false);
     } catch (error) {
       console.error('Error submitting report:', error);
-      toast.error('Failed to submit report');
+      toast.error(error.response?.data?.message || 'Failed to submit report');
     }
   };
 

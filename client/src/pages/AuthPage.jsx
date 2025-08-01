@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import './AuthPage.css';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Lock, Phone, Eye, EyeOff } from 'lucide-react';
+import { User, Mail, Lock, Phone, Eye, EyeOff, Home } from 'lucide-react';
 import {registerUser,
   loginUser,
   registerLandlord,
