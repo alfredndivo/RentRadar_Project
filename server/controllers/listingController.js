@@ -100,7 +100,9 @@ export const getAllListings = async (req, res) => {
       if (maxPrice) query.price.$lte = maxPrice;
     }
 
-    const listings = await Listing.find(query).sort({ createdAt: -1 });
+    const listings = await Listing.find(query)
+      .populate('landlord', 'name email phone')
+      .sort({ createdAt: -1 });
     res.json(listings);
   } catch (err) {
     res.status(500).json({ message: 'Failed to fetch listings' });
@@ -110,7 +112,8 @@ export const getAllListings = async (req, res) => {
 // 📌 GET single listing by ID
 export const getSingleListing = async (req, res) => {
   try {
-    const listing = await Listing.findById(req.params.id);
+    const listing = await Listing.findById(req.params.id)
+      .populate('landlord', 'name email phone');
     if (!listing) return res.status(404).json({ message: 'Listing not found' });
     
     // Increment view count

@@ -32,6 +32,15 @@ const reportSchema = new mongoose.Schema({
   details: {
     type: String,
     maxlength: 1000
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'investigating', 'resolved', 'dismissed'],
+    default: 'pending'
+  },
+  adminResponse: {
+    type: String,
+    maxlength: 1000
   }
 }, { timestamps: true });
 

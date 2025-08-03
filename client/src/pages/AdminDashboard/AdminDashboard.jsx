@@ -11,7 +11,8 @@ import {
   BarChart3,
   MessageSquare,
   Shield,
-  Bell
+  Bell,
+  Star
 } from 'lucide-react';
 import { toast } from 'sonner';
 import DarkModeToggle from '../../components/DarkModeToggle';
@@ -87,6 +88,7 @@ const AdminDashboard = () => {
     { name: 'Dashboard', icon: <Home className="w-5 h-5" />, path: '/admin/dashboard', exact: true },
     { name: 'Reports', icon: <Flag className="w-5 h-5" />, path: '/admin/reports' },
     { name: 'Users', icon: <Users className="w-5 h-5" />, path: '/admin/users' },
+    { name: 'Reviews', icon: <Star className="w-5 h-5" />, path: '/admin/reviews' },
     { name: 'Analytics', icon: <BarChart3 className="w-5 h-5" />, path: '/admin/analytics' },
     { name: 'Moderation', icon: <Shield className="w-5 h-5" />, path: '/admin/moderation' },
   ];

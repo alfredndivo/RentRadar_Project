@@ -58,7 +58,7 @@ const listingSchema = new mongoose.Schema(
     images: [String], // Array of resized image paths
     landlord: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'User',
+      ref: 'Landlord',
       required: true,
     },
     views: {

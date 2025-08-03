@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X, MapPin, Bed, Bath, Heart, MessageCircle, Share2, Calendar, Phone, Mail, Flag } from 'lucide-react';
+import { Star } from 'lucide-react';
 import { toast } from 'sonner';
 import LocationMap from '../../components/LocationMap';
 import ImageLightbox from '../../components/ImageLightbox';
@@ -257,6 +258,15 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
                   Report Listing
                 </button>
 
+                {/* Review Button */}
+                <button
+                  onClick={() => setShowReviewModal(true)}
+                  className="w-full flex items-center justify-center gap-2 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-400 py-2 px-4 rounded-xl hover:bg-yellow-200 dark:hover:bg-yellow-900/50 transition-colors"
+                >
+                  <Star className="w-4 h-4" />
+                  Write Review
+                </button>
+
                 {/* Alternative Contact Methods */}
                 <div className="mt-6 pt-6 border-t border-gray-200">
                   <p className="text-sm text-gray-600 mb-3">
@@ -335,6 +345,17 @@ const ListingDetailsModal = ({ listing, onClose, onContact, onSave, isSaved }) =
           onClose={() => setShowReportModal(false)}
           targetId={listing._id}
           targetType="listing"
+        />
+      )}
+      
+      {/* Review Modal */}
+      {showReviewModal && (
+        <ReviewModal
+          isOpen={showReviewModal}
+          onClose={() => setShowReviewModal(false)}
+          targetId={listing._id}
+          targetType="listing"
+          targetTitle={listing.title}
         />
       )}
     </div>

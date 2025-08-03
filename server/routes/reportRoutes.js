@@ -32,6 +32,37 @@ router.get('/', protect(), async (req, res, next) => {
   next();
 }, getAllReports);
 
+// 🔐 Admin: Update report status
+router.patch('/:id/status', protect(), async (req, res, next) => {
+  if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {
+    return res.status(403).json({ message: 'Access denied' });
+  }
+  next();
+}, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+    
+    if (!['pending', 'investigating', 'resolved', 'dismissed'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    
+    const report = await Report.findByIdAndUpdate(
+      id, 
+      { status, updatedAt: new Date() }, 
+      { new: true }
+    );
+    
+    if (!report) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+    
+    res.json({ message: 'Report status updated', report });
+  } catch (err) {
+    res.status(500).json({ message: 'Failed to update report status' });
+  }
+});
+
 // 🔐 Admin: Delete a report
 router.delete('/:id', protect(), async (req, res, next) => {
   if (req.user.role !== 'admin' && req.user.role !== 'superadmin') {

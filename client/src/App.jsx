@@ -9,6 +9,7 @@ import LandlordListingsPage from './pages/Landlorddashboard/ListingsPage';
 import LandlordBookingsPage from './pages/Landlorddashboard/LandlordBookingsPage';
 import LandlordMessagesPage from './pages/Landlorddashboard/LandlordMessagesPage';
 import LandlordReportsPage from './pages/Landlorddashboard/LandlordReportsPage';
+import LandlordReviewsPage from './pages/Landlorddashboard/LandlordReviewsPage';
 import LandlordCompleteProfile from './pages/Landlorddashboard/LandlordCompleteProfile';
 
 import AdminReportsPage from './pages/AdminDashboard/AdminReportsPage';
@@ -16,6 +17,7 @@ import AdminDashboard from './pages/AdminDashboard/AdminDashboard';
 import AdminUsersPage from './pages/AdminDashboard/AdminUsersPage';
 import AdminAnalyticsPage from './pages/AdminDashboard/AdminAnalyticsPage';
 import AdminModerationPage from './pages/AdminDashboard/AdminModerationPage';
+import AdminReviewsPage from './pages/AdminDashboard/AdminReviewsPage';
 
 import RequireAuth from './components/RequireAuth';
 
@@ -40,6 +42,7 @@ function App() {
         <Route path="/landlord/bookings" element={<LandlordBookingsPage />} />
         <Route path="/landlord/messages" element={<LandlordMessagesPage />} />
         <Route path="/landlord/reports" element={<LandlordReportsPage />} />
+        <Route path="/landlord/reviews" element={<LandlordReviewsPage />} />
         <Route path="/landlord/profile" element={<LandlordCompleteProfile />} />
       </Route>
 
@@ -49,6 +52,7 @@ function App() {
         <Route path="/admin/reports" element={<AdminReportsPage />} />
         <Route path="/admin/users" element={<AdminUsersPage />} />
         <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+        <Route path="/admin/reviews" element={<AdminReviewsPage />} />
         <Route path="/admin/moderation" element={<AdminModerationPage />} />
       </Route>
 

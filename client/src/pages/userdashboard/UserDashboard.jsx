@@ -25,6 +25,7 @@ import UserMessagesPage from './UserMessagesPage';
 import UserSavedListings from './UserSavedListings';
 import UserBookingsPage from './UserBookingsPage';
 import UserReportsPage from './UserReportsPage';
+import UserReviewsPage from './UserReviewsPage';
 import UserProfilePage from './UserProfilePage';
 import PropertyRecommendations from '../../components/PropertyRecommendations';
 import PropertyAlerts from '../../components/PropertyAlerts';
@@ -69,6 +70,7 @@ const UserDashboard = () => {
     { name: 'Saved Listings', icon: <Heart className="w-5 h-5" />, path: '/user/dashboard/saved' },
     { name: 'My Bookings', icon: <Calendar className="w-5 h-5" />, path: '/user/dashboard/bookings' },
     { name: 'Messages', icon: <MessageSquare className="w-5 h-5" />, path: '/user/dashboard/messages' },
+    { name: 'My Reviews', icon: <Star className="w-5 h-5" />, path: '/user/dashboard/reviews' },
     { name: 'My Reports', icon: <Flag className="w-5 h-5" />, path: '/user/dashboard/reports' },
     { name: 'Profile', icon: <User className="w-5 h-5" />, path: '/user/dashboard/profile' },
   ];
@@ -204,6 +206,7 @@ const UserDashboard = () => {
                 <Route path="/saved" element={<UserSavedListings />} />
                 <Route path="/bookings" element={<UserBookingsPage />} />
                 <Route path="/messages" element={<UserMessagesPage />} />
+                <Route path="/reviews" element={<UserReviewsPage />} />
                 <Route path="/reports" element={<UserReportsPage />} />
                 <Route path="/profile" element={<UserProfilePage />} />
               </Routes>

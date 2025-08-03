@@ -36,11 +36,13 @@ const LandlordDashboardStats = ({ user }) => {
   const fetchDashboardData = async () => {
     try {
       // Fetch dashboard statistics
-      const [listingsRes, bookingsRes] = await Promise.all([
-        fetch('/api/listings/my/listings', { credentials: 'include' }),
-        fetch('/api/bookings/landlord-bookings', { credentials: 'include' })
-      ]);
-
+      const listingsRes = await fetch('/api/listings/my/listings', { credentials: 'include' });
+      const bookingsRes = await fetch('/api/bookings/landlord-bookings', { credentials: 'include' });
+      
+      if (!listingsRes.ok || !bookingsRes.ok) {
+        throw new Error('Failed to fetch data');
+      }
+      
       const listings = await listingsRes.json();
       const bookings = await bookingsRes.json();
 

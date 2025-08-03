@@ -93,4 +93,11 @@ export const sendGlobalNotification = (data) => API.post('/admin/global-notifica
 export const updateProfile = (data) => API.put('/me/update', data);
 // export const updateUserProfile = (data) => API.put('/auth/me/update', data);
 
+// ----------------- REVIEWS -----------------
+export const submitReview = (data) => API.post('/reviews', data);
+export const getUserReviews = () => API.get('/reviews/my');
+export const getLandlordReviews = () => API.get('/reviews/landlord/my');
+export const getReviewsByTarget = (targetType, targetId) => API.get(`/reviews/${targetType}/${targetId}`);
+export const deleteReview = (id) => API.delete(`/reviews/${id}`);
+
 export default API;

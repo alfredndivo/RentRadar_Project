@@ -10,7 +10,8 @@ import {
   FileText, 
   Flag,
   Building,
-  Calendar
+  Calendar,
+  Star
 } from 'lucide-react';
 import { toast } from 'sonner';
 import DarkModeToggle from '../../components/DarkModeToggle';
@@ -46,6 +47,7 @@ const LandlordDashboard = () => {
     { name: 'My Listings', icon: <Building className="w-5 h-5" />, path: '/landlord/listings' },
     { name: 'Bookings', icon: <Calendar className="w-5 h-5" />, path: '/landlord/bookings' },
     { name: 'Messages', icon: <Mail className="w-5 h-5" />, path: '/landlord/messages' },
+    { name: 'Reviews', icon: <Star className="w-5 h-5" />, path: '/landlord/reviews' },
     { name: 'Reports', icon: <Flag className="w-5 h-5" />, path: '/landlord/reports' },
     { name: 'Profile', icon: <User className="w-5 h-5" />, path: '/landlord/profile' },
   ];

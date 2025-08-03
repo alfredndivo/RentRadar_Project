@@ -8,6 +8,7 @@ import DarkModeToggle from '../../components/DarkModeToggle';
 const AdminReportsPage = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [updatingReport, setUpdatingReport] = useState(null);
   const { user } = useOutletContext();
   const navigate = useNavigate();
 
@@ -170,16 +171,22 @@ const AdminReportsPage = () => {
                 {/* Admin Actions */}
                 <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                   <button className="flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-sm">
+                    onClick={() => updateReportStatus(report._id, 'resolved')}
+                    disabled={updatingReport === report._id}
                     <CheckCircle className="w-4 h-4" />
-                    Mark Resolved
+                    {updatingReport === report._id ? 'Updating...' : 'Mark Resolved'}
                   </button>
+                    onClick={() => updateReportStatus(report._id, 'investigating')}
+                    disabled={updatingReport === report._id}
                   <button className="flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-sm">
                     <Flag className="w-4 h-4" />
-                    Investigate
+                    {updatingReport === report._id ? 'Updating...' : 'Investigate'}
                   </button>
+                    onClick={() => updateReportStatus(report._id, 'dismissed')}
+                    disabled={updatingReport === report._id}
                   <button className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-sm">
                     <X className="w-4 h-4" />
-                    Dismiss
+                    {updatingReport === report._id ? 'Updating...' : 'Dismiss'}
                   </button>
                 </div>
               </div>

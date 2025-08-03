@@ -38,13 +38,16 @@ const UserDashboardStats = ({ user }) => {
 
   const fetchDashboardData = async () => {
     try {
-      const [savedRes, bookingsRes] = await Promise.all([
-        fetch('/api/user/saved-listings', { credentials: 'include' }),
-        fetch('/api/bookings/my-bookings', { credentials: 'include' })
-      ]);
-
-      const savedListings = await savedRes.json();
-      const bookings = await bookingsRes.json();
+      const savedRes = await fetch('/api/user/saved-listings', { credentials: 'include' });
+      const bookingsRes = await fetch('/api/bookings/my-bookings', { credentials: 'include' });
+      
+      if (!savedRes.ok || !bookingsRes.ok) {
+        console.warn('Some dashboard data failed to load');
+        // Continue with partial data instead of failing completely
+      }
+      
+      const savedListings = savedRes.ok ? await savedRes.json() : [];
+      const bookings = bookingsRes.ok ? await bookingsRes.json() : [];
 
       const upcomingBookings = bookings.filter(b => 
         b.status === 'approved' && new Date(b.visitDate) > new Date()
