@@ -11,6 +11,7 @@ import {
   sendGlobalNotification
 } from '../controllers/adminController.js';
 import { getAllReports } from '../controllers/reportController.js';
+import { updateReportStatus } from '../controllers/reportController.js';
 
 import {protect} from '../middleware/authMiddleware.js';
 import { roleCheck } from '../middleware/roleCheck.js';
@@ -26,7 +27,7 @@ router.get('/reports', protect(), roleCheck(['admin', 'superadmin']), getAllRepo
 router.put('/users/:id/toggle', protect(), roleCheck(['admin', 'superadmin']), toggleUserStatus);
 router.delete('/listings/:id', protect(), roleCheck(['admin', 'superadmin']), deleteListing);
 router.get('/analytics', protect(), roleCheck(['admin', 'superadmin']), getAnalytics);
-
+router.put('/reports/:id', protect(), roleCheck(['admin', 'superadmin']), updateReportStatus);
 // New admin actions
 router.post('/send-warning', protect(), roleCheck(['admin', 'superadmin']), sendWarningMessage);
 router.post('/ban-listing/:id', protect(), roleCheck(['admin', 'superadmin']), banListing);

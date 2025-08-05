@@ -57,9 +57,10 @@ export const apiRateLimitMiddleware = rateLimit({
 export const authSlowDown = slowDown({
   windowMs: 15 * 60 * 1000,
   delayAfter: 5,
-  delayMs: 500,
+  delayMs: () => 500, // ✅ v3+ style
   maxDelayMs: 20000
 });
+
 
 // Request logging middleware
 export const requestLogger = (req, res, next) => {

@@ -45,9 +45,19 @@ const AdminReportsPage = () => {
       });
 
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Failed to update report');
+       let errorMessage = "Failed to update report";
+        try {
+            const errorText = await response.text();
+       if (errorText) {
+          const error = JSON.parse(errorText);
+         errorMessage = error.message || errorMessage;
+        }
+        } catch (e) {
+        // Parsing failed, keep default error message
       }
+      throw new Error(errorMessage);
+     }
+
 
       const result = await response.json();
       

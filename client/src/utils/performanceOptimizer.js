@@ -73,8 +73,9 @@ export const memoize = (fn) => {
 
 // Bundle splitting helper
 export const loadComponent = (componentPath) => {
-  return React.lazy(() => import(componentPath));
+  return React.lazy(() => import(/* @vite-ignore */ componentPath));
 };
+
 
 // Image compression
 export const compressImage = (file, maxWidth = 1280, quality = 0.8) => {
