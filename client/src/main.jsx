@@ -5,6 +5,11 @@ import { Toaster } from 'sonner'; // ✅ Correct for displaying toasts with sonn
 import ErrorBoundary from './components/ErrorBoundary';
 import App from './App';
 import './index.css';
+import { registerServiceWorker, preloadCriticalResources } from './utils/performanceOptimizer';
+
+// Initialize performance optimizations
+preloadCriticalResources();
+registerServiceWorker();
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(

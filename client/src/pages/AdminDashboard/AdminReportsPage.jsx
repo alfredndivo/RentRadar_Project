@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useOutletContext, useNavigate } from "react-router-dom";
-import { Flag, Calendar, AlertTriangle, CheckCircle, X, ArrowLeft } from "lucide-react";
+import { Flag, Calendar, AlertTriangle, CheckCircle, X, ArrowLeft, Eye, MessageSquare } from "lucide-react";
 import { toast } from 'sonner';
 import { getAllReportsForAdmin } from '../../../api';
 import DarkModeToggle from '../../components/DarkModeToggle';
@@ -9,26 +9,72 @@ const AdminReportsPage = () => {
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(true);
   const [updatingReport, setUpdatingReport] = useState(null);
-  const { user } = useOutletContext();
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [showResponseModal, setShowResponseModal] = useState(false);
+  const [responseData, setResponseData] = useState({ status: '', adminResponse: '' });
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchAllReports = async () => {
-      try {
-        const res = await getAllReportsForAdmin();
-        console.log('Admin reports response:', res.data);
-        setReports(res.data || []);
-      } catch (error) {
-        console.error("Error fetching reports", error);
-        toast.error('Failed to load reports');
-        setReports([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchAllReports();
   }, []);
+
+  const fetchAllReports = async () => {
+    try {
+      const res = await getAllReportsForAdmin();
+      console.log('Admin reports response:', res.data);
+      setReports(res.data || []);
+    } catch (error) {
+      console.error("Error fetching reports", error);
+      toast.error('Failed to load reports');
+      setReports([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateReportStatus = async (reportId, status, adminResponse = '') => {
+    setUpdatingReport(reportId);
+    try {
+      const response = await fetch(`/api/reports/${reportId}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({ status, adminResponse })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to update report');
+      }
+
+      const result = await response.json();
+      
+      // Update local state
+      setReports(prev => prev.map(report => 
+        report._id === reportId 
+          ? { ...report, status, adminResponse }
+          : report
+      ));
+
+      toast.success(`Report ${status} successfully`);
+      setShowResponseModal(false);
+      setSelectedReport(null);
+      setResponseData({ status: '', adminResponse: '' });
+    } catch (error) {
+      console.error('Error updating report:', error);
+      toast.error(error.message || 'Failed to update report');
+    } finally {
+      setUpdatingReport(null);
+    }
+  };
+
+  const handleQuickAction = (report, status) => {
+    setSelectedReport(report);
+    setResponseData({ status, adminResponse: '' });
+    setShowResponseModal(true);
+  };
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -152,45 +198,118 @@ const AdminReportsPage = () => {
                   </div>
                 </div>
 
-                {report.targetType === 'landlord' && report.landlord && (
-                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
-                    <p className="text-sm font-medium text-red-800 dark:text-red-400">
-                      Against Landlord: <span className="font-semibold">{report.landlord.name || "Unknown"}</span>
+                {report.targetType === 'listing' && report.listing && (
+                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
+                    <p className="text-sm font-medium text-blue-800 dark:text-blue-400">
+                      Related Listing: <span className="font-semibold">{report.listing.title || "Listing Info"}</span>
+                    </p>
+                    <p className="text-xs text-blue-600 dark:text-blue-300">
+                      Location: {report.listing.location}
                     </p>
                   </div>
                 )}
 
-                {report.targetType === 'listing' && report.listing && (
-                  <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-4">
-                    <p className="text-sm font-medium text-blue-800 dark:text-blue-400">
-                      Related Listing: <span className="font-semibold underline">{report.listing.title || "Listing Info"}</span>
+                {report.targetType === 'user' && (report.landlord || report.user) && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 mb-4">
+                    <p className="text-sm font-medium text-red-800 dark:text-red-400">
+                      Against User: <span className="font-semibold">{report.landlord?.name || report.user?.name || "Unknown"}</span>
                     </p>
+                  </div>
+                )}
+
+                {report.adminResponse && (
+                  <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-3 mb-4">
+                    <p className="text-sm font-medium text-green-800 dark:text-green-400 mb-1">Admin Response:</p>
+                    <p className="text-sm text-green-700 dark:text-green-300">{report.adminResponse}</p>
                   </div>
                 )}
 
                 {/* Admin Actions */}
                 <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-                  <button className="flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-sm">
-                    onClick={() => updateReportStatus(report._id, 'resolved')}
+                  <button
+                    onClick={() => handleQuickAction(report, 'resolved')}
                     disabled={updatingReport === report._id}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded-lg hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors text-sm disabled:opacity-50"
+                  >
                     <CheckCircle className="w-4 h-4" />
                     {updatingReport === report._id ? 'Updating...' : 'Mark Resolved'}
                   </button>
-                    onClick={() => updateReportStatus(report._id, 'investigating')}
+                  
+                  <button
+                    onClick={() => handleQuickAction(report, 'investigating')}
                     disabled={updatingReport === report._id}
-                  <button className="flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-sm">
-                    <Flag className="w-4 h-4" />
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-lg hover:bg-blue-200 dark:hover:bg-blue-900/50 transition-colors text-sm disabled:opacity-50"
+                  >
+                    <Eye className="w-4 h-4" />
                     {updatingReport === report._id ? 'Updating...' : 'Investigate'}
                   </button>
-                    onClick={() => updateReportStatus(report._id, 'dismissed')}
+                  
+                  <button
+                    onClick={() => handleQuickAction(report, 'dismissed')}
                     disabled={updatingReport === report._id}
-                  <button className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-sm">
+                    className="flex items-center gap-2 px-4 py-2 bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors text-sm disabled:opacity-50"
+                  >
                     <X className="w-4 h-4" />
                     {updatingReport === report._id ? 'Updating...' : 'Dismiss'}
                   </button>
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Response Modal */}
+        {showResponseModal && selectedReport && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full">
+              <div className="p-6">
+                <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                  Update Report Status
+                </h3>
+                
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-300 mb-2">
+                    Report: <strong>{selectedReport.reason}</strong>
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-300">
+                    New Status: <strong className="capitalize">{responseData.status}</strong>
+                  </p>
+                </div>
+
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Admin Response (Optional)
+                  </label>
+                  <textarea
+                    value={responseData.adminResponse}
+                    onChange={(e) => setResponseData(prev => ({ ...prev, adminResponse: e.target.value }))}
+                    rows={3}
+                    placeholder="Add a response message for the reporter..."
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setShowResponseModal(false);
+                      setSelectedReport(null);
+                      setResponseData({ status: '', adminResponse: '' });
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => updateReportStatus(selectedReport._id, responseData.status, responseData.adminResponse)}
+                    disabled={updatingReport === selectedReport._id}
+                    className="flex-1 bg-blue-500 text-white px-4 py-2 rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50"
+                  >
+                    {updatingReport === selectedReport._id ? 'Updating...' : 'Update Status'}
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

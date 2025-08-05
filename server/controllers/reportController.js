@@ -13,8 +13,8 @@ export const submitReport = async (req, res) => {
     const { targetType, targetId, reason, details } = req.body;
     const userId = req.user._id;
 
-    if (!targetType || !targetId || !reason) {
-      return res.status(400).json({ message: 'Missing required fields' });
+    if (!targetType || !targetId || !reason || !details) {
+      return res.status(400).json({ message: 'All fields are required' });
     }
 
     // Validate ObjectId format
@@ -28,18 +28,20 @@ export const submitReport = async (req, res) => {
       return res.status(409).json({ message: 'You have already reported this item' });
     }
 
-    // Verify target exists
-    let targetExists = false;
+    // Verify target exists and populate reference
+    let targetRef = null;
     if (targetType === 'listing') {
-      const listing = await Listing.findById(targetId);
-      targetExists = !!listing;
+      const listing = await Listing.findById(targetId).populate('landlord');
+      if (!listing) {
+        return res.status(404).json({ message: 'Listing not found' });
+      }
+      targetRef = listing;
     } else if (targetType === 'user') {
       const user = await User.findById(targetId) || await Landlord.findById(targetId);
-      targetExists = !!user;
-    }
-
-    if (!targetExists) {
-      return res.status(404).json({ message: `${targetType} not found` });
+      if (!user) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+      targetRef = user;
     }
 
     const report = new Report({
@@ -47,10 +49,17 @@ export const submitReport = async (req, res) => {
       targetType,
       targetId,
       reason,
-      details
+      details,
+      status: 'pending'
     });
 
     await report.save();
+
+    // Populate the report for response
+    await report.populate([
+      { path: 'reportedBy', select: 'name email' },
+      { path: 'targetId', select: 'title name location' }
+    ]);
 
     // Real-time notification to all admins
     const admins = await Admin.find({});
@@ -67,21 +76,27 @@ export const submitReport = async (req, res) => {
       });
     }
 
+    // Emit real-time notification
+    const io = req.app.get('io');
+    if (io) {
+      io.emit('newReport', {
+        report,
+        message: `New ${reason} report submitted`
+      });
+    }
+
     // If reporting a landlord or listing, notify the landlord
-    if (targetType === 'listing') {
-      const listing = await Listing.findById(targetId).populate('landlord');
-      if (listing && listing.landlord) {
-        await createNotification({
-          userId: listing.landlord._id,
-          userType: 'Landlord',
-          type: 'report',
-          title: '⚠️ Report Received',
-          message: `Your listing "${listing.title}" has been reported for: ${reason}`,
-          link: '/landlord/reports',
-          data: { reportId: report._id, listingId: targetId },
-          priority: 'high'
-        });
-      }
+    if (targetType === 'listing' && targetRef.landlord) {
+      await createNotification({
+        userId: targetRef.landlord._id,
+        userType: 'Landlord',
+        type: 'report',
+        title: '⚠️ Report Received',
+        message: `Your listing "${targetRef.title}" has been reported for: ${reason}`,
+        link: '/landlord/reports',
+        data: { reportId: report._id, listingId: targetId },
+        priority: 'high'
+      });
     } else if (targetType === 'user') {
       const landlord = await Landlord.findById(targetId);
       if (landlord) {
@@ -98,7 +113,10 @@ export const submitReport = async (req, res) => {
       }
     }
 
-    res.status(201).json({ message: 'Report submitted' });
+    res.status(201).json({ 
+      message: 'Report submitted successfully',
+      report 
+    });
   } catch (err) {
     console.error('❌ Report submission error:', err);
     res.status(500).json({ message: 'Failed to submit report' });
@@ -111,18 +129,27 @@ export const getAllReports = async (req, res) => {
     const reports = await Report.find()
       .populate('reportedBy', 'name email role')
       .sort({ createdAt: -1 })
-      .lean(); // .lean() returns plain JS objects so we can add props
+      .lean();
 
     const populatedReports = await Promise.all(
       reports.map(async (report) => {
+        let target = null;
+        
         if (report.targetType === 'listing') {
-          const listing = await Listing.findById(report.targetId).select('title location');
-          return { ...report, target: listing };
+          target = await Listing.findById(report.targetId)
+            .select('title location landlord')
+            .populate('landlord', 'name email');
         } else if (report.targetType === 'user') {
-          const user = await User.findById(report.targetId).select('name email');
-          return { ...report, target: user };
+          target = await User.findById(report.targetId).select('name email') ||
+                   await Landlord.findById(report.targetId).select('name email');
         }
-        return report;
+        
+        return { 
+          ...report, 
+          listing: report.targetType === 'listing' ? target : null,
+          landlord: report.targetType === 'listing' ? target?.landlord : null,
+          user: report.targetType === 'user' ? target : null
+        };
       })
     );
 
@@ -133,14 +160,78 @@ export const getAllReports = async (req, res) => {
   }
 };
 
+// Get user's own reports
+export const getUserReports = async (req, res) => {
+  try {
+    const reports = await Report.find({ reportedBy: req.user._id })
+      .populate({
+        path: 'targetId',
+        select: 'title name location'
+      })
+      .sort({ createdAt: -1 });
+    
+    res.json(reports);
+  } catch (err) {
+    console.error('Error fetching user reports:', err);
+    res.status(500).json({ message: 'Failed to fetch reports' });
+  }
+};
 
-// 🗑️ Admin: Delete a report
+// Update report status
+export const updateReportStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { status, adminResponse } = req.body;
+    
+    if (!['pending', 'investigating', 'resolved', 'dismissed'].includes(status)) {
+      return res.status(400).json({ message: 'Invalid status' });
+    }
+    
+    const report = await Report.findByIdAndUpdate(
+      id, 
+      { 
+        status, 
+        adminResponse: adminResponse || '',
+        updatedAt: new Date() 
+      }, 
+      { new: true }
+    ).populate('reportedBy', 'name email');
+    
+    if (!report) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+
+    // Notify the reporter about status update
+    await createNotification({
+      userId: report.reportedBy._id,
+      userType: 'User',
+      type: 'report',
+      title: '📋 Report Update',
+      message: `Your report has been ${status}${adminResponse ? ': ' + adminResponse : ''}`,
+      link: '/user/dashboard/reports',
+      priority: 'medium'
+    });
+    
+    res.json({ message: 'Report status updated successfully', report });
+  } catch (err) {
+    console.error('Error updating report status:', err);
+    res.status(500).json({ message: 'Failed to update report status' });
+  }
+};
+
+// 🗑️ Delete a report
 export const deleteReport = async (req, res) => {
   try {
     const { id } = req.params;
-    await Report.findByIdAndDelete(id);
-    res.json({ message: 'Report deleted' });
+    const report = await Report.findByIdAndDelete(id);
+    
+    if (!report) {
+      return res.status(404).json({ message: 'Report not found' });
+    }
+    
+    res.json({ message: 'Report deleted successfully' });
   } catch (err) {
+    console.error('Error deleting report:', err);
     res.status(500).json({ message: 'Failed to delete report' });
   }
 };

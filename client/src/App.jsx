@@ -20,45 +20,51 @@ import AdminModerationPage from './pages/AdminDashboard/AdminModerationPage';
 import AdminReviewsPage from './pages/AdminDashboard/AdminReviewsPage';
 
 import RequireAuth from './components/RequireAuth';
+import PerformanceMonitor from './components/PerformanceMonitor';
 
 function App() {
   return (
-    <Routes>
-      {/* Default redirect to auth */}
-      <Route path="/" element={<Navigate to="/auth" />} />
+    <>
+      <Routes>
+        {/* Default redirect to auth */}
+        <Route path="/" element={<Navigate to="/auth" />} />
 
-      {/* Auth route */}
-      <Route path="/auth" element={<AuthPage />} />
+        {/* Auth route */}
+        <Route path="/auth" element={<AuthPage />} />
 
-      {/* User protected routes */}
-      <Route element={<RequireAuth allowedRoles={['user']} />}>
-        <Route path="/user/dashboard/*" element={<UserDashboard />} />
-      </Route>
+        {/* User protected routes */}
+        <Route element={<RequireAuth allowedRoles={['user']} />}>
+          <Route path="/user/dashboard/*" element={<UserDashboard />} />
+        </Route>
 
-      {/* Landlord protected routes */}
-      <Route element={<RequireAuth allowedRoles={['landlord']} />}>
-        <Route path="/landlord/dashboard" element={<LandlordDashboard />} />
-        <Route path="/landlord/listings" element={<LandlordListingsPage />} />
-        <Route path="/landlord/bookings" element={<LandlordBookingsPage />} />
-        <Route path="/landlord/messages" element={<LandlordMessagesPage />} />
-        <Route path="/landlord/reports" element={<LandlordReportsPage />} />
-        <Route path="/landlord/reviews" element={<LandlordReviewsPage />} />
-        <Route path="/landlord/profile" element={<LandlordCompleteProfile />} />
-      </Route>
+        {/* Landlord protected routes */}
+        <Route element={<RequireAuth allowedRoles={['landlord']} />}>
+          <Route path="/landlord/dashboard" element={<LandlordDashboard />} />
+          <Route path="/landlord/listings" element={<LandlordListingsPage />} />
+          <Route path="/landlord/bookings" element={<LandlordBookingsPage />} />
+          <Route path="/landlord/messages" element={<LandlordMessagesPage />} />
+          <Route path="/landlord/reports" element={<LandlordReportsPage />} />
+          <Route path="/landlord/reviews" element={<LandlordReviewsPage />} />
+          <Route path="/landlord/profile" element={<LandlordCompleteProfile />} />
+        </Route>
 
-      {/* Admin protected routes */}
-      <Route element={<RequireAuth allowedRoles={['admin', 'superadmin']} />}>
-        <Route path="/admin/dashboard" element={<AdminDashboard />} />
-        <Route path="/admin/reports" element={<AdminReportsPage />} />
-        <Route path="/admin/users" element={<AdminUsersPage />} />
-        <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
-        <Route path="/admin/reviews" element={<AdminReviewsPage />} />
-        <Route path="/admin/moderation" element={<AdminModerationPage />} />
-      </Route>
+        {/* Admin protected routes */}
+        <Route element={<RequireAuth allowedRoles={['admin', 'superadmin']} />}>
+          <Route path="/admin/dashboard" element={<AdminDashboard />} />
+          <Route path="/admin/reports" element={<AdminReportsPage />} />
+          <Route path="/admin/users" element={<AdminUsersPage />} />
+          <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
+          <Route path="/admin/reviews" element={<AdminReviewsPage />} />
+          <Route path="/admin/moderation" element={<AdminModerationPage />} />
+        </Route>
 
-      {/* Catch-all route */}
-      <Route path="*" element={<Navigate to="/auth" />} />
-    </Routes>
+        {/* Catch-all route */}
+        <Route path="*" element={<Navigate to="/auth" />} />
+      </Routes>
+      
+      {/* Performance Monitor */}
+      <PerformanceMonitor />
+    </>
   );
 }
 

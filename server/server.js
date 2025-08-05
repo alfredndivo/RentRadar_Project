@@ -19,6 +19,13 @@ import notificationRoutes from './routes/notificationRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import bookingRoutes from './routes/bookingRoutes.js';
 import errorHandler from './middleware/errorHandler.js';
+import { 
+  compressionMiddleware, 
+  securityMiddleware, 
+  rateLimitMiddleware,
+  requestLogger,
+  cacheControl
+} from './middleware/performance.js';
 
 // Setup __dirname in ES6
 const __filename = fileURLToPath(import.meta.url);
@@ -70,15 +77,23 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
+// Performance and security middleware
+app.use(compressionMiddleware);
+app.use(securityMiddleware);
+app.use(rateLimitMiddleware);
+app.use(requestLogger);
+
 app.use((req, res, next) => {
   console.log('Incoming:', req.method, req.originalUrl);
   next();
 });
-// Static image serving
+
+// Static file serving with caching
+app.use('/uploads', cacheControl(86400), express.static(path.join(__dirname, 'uploads')));
+
 // Make io available to routes
 app.set('io', io);
 global.io = io;
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -102,7 +117,11 @@ io.on('connection', (socket) => {
   // Join user to their personal room
   socket.on('join', (userId) => {
     socket.join(`user:${userId}`);
+    socket.userId = userId;
     console.log(`User ${userId} joined room user:${userId}`);
+    
+    // Emit user online status
+    socket.broadcast.emit('userOnline', userId);
   });
 
   // Join chat room
@@ -121,8 +140,32 @@ io.on('connection', (socket) => {
     socket.to(`chat:${chatId}`).emit('messageDelivered', { messageId });
   });
 
+  // Handle message reactions
+  socket.on('addReaction', ({ messageId, reaction, chatId }) => {
+    socket.to(`chat:${chatId}`).emit('messageReaction', { 
+      messageId, 
+      reaction, 
+      userId: socket.userId 
+    });
+  });
+
+  // Handle live stats requests
+  socket.on('requestLiveStats', () => {
+    // Send current platform stats
+    socket.emit('liveStats', {
+      activeUsers: io.engine.clientsCount,
+      newListings: 12, // You can calculate this from database
+      recentActivity: []
+    });
+  });
+
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+    
+    // Emit user offline status
+    if (socket.userId) {
+      socket.broadcast.emit('userOffline', socket.userId);
+    }
   });
 });
 app.use((req, res) => {

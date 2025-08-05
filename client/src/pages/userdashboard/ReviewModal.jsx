@@ -3,7 +3,7 @@ import { X, Star, Send } from 'lucide-react';
 import { toast } from 'sonner';
 import { submitReview } from '../../../api';
 
-const ReviewModal = ({ isOpen, onClose, targetId, targetType, targetTitle }) => {
+const ReviewModal = ({ isOpen, onClose, targetId, targetType, targetTitle, onSuccess }) => {
   const [reviewData, setReviewData] = useState({
     rating: 5,
     comment: ''
@@ -20,7 +20,7 @@ const ReviewModal = ({ isOpen, onClose, targetId, targetType, targetTitle }) => 
 
     setLoading(true);
     try {
-      await submitReview({
+      const response = await submitReview({
         targetType,
         targetId,
         rating: reviewData.rating,
@@ -28,10 +28,12 @@ const ReviewModal = ({ isOpen, onClose, targetId, targetType, targetTitle }) => 
       });
       
       toast.success('Review submitted successfully');
+      onSuccess?.();
       onClose();
     } catch (error) {
       console.error('Error submitting review:', error);
-      toast.error(error.response?.data?.message || 'Failed to submit review');
+      const errorMessage = error.response?.data?.message || 'Failed to submit review';
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -62,6 +64,17 @@ const ReviewModal = ({ isOpen, onClose, targetId, targetType, targetTitle }) => 
         ))}
       </div>
     );
+  };
+
+  const getRatingText = (rating) => {
+    switch (rating) {
+      case 5: return "Excellent!";
+      case 4: return "Very Good";
+      case 3: return "Good";
+      case 2: return "Fair";
+      case 1: return "Poor";
+      default: return "";
+    }
   };
 
   if (!isOpen) return null;
@@ -101,16 +114,12 @@ const ReviewModal = ({ isOpen, onClose, targetId, targetType, targetTitle }) => 
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Your Rating *
             </label>
-            <div className="flex items-center justify-center">
+            <div className="flex flex-col items-center">
               {renderStars(reviewData.rating, true)}
+              <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-2 font-medium">
+                {getRatingText(reviewData.rating)}
+              </p>
             </div>
-            <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-2">
-              {reviewData.rating === 5 && "Excellent!"}
-              {reviewData.rating === 4 && "Very Good"}
-              {reviewData.rating === 3 && "Good"}
-              {reviewData.rating === 2 && "Fair"}
-              {reviewData.rating === 1 && "Poor"}
-            </p>
           </div>
 
           {/* Comment */}

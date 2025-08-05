@@ -47,6 +47,15 @@ export const sendMessage = async (req, res) => {
     const senderType = req.user.role === 'landlord' ? 'Landlord' : 'User';
     const receiverType = req.user.role === 'landlord' ? 'User' : 'Landlord';
 
+    // Validate required fields
+    if (!receiverId && !chatId) {
+      return res.status(400).json({ message: 'Either chatId or receiverId is required' });
+    }
+
+    if (!content && !req.file) {
+      return res.status(400).json({ message: 'Message content or file is required' });
+    }
+
     let chat;
     if (chatId) {
       chat = await Chat.findById(chatId);
@@ -68,8 +77,11 @@ export const sendMessage = async (req, res) => {
 
     // Determine message type based on file
     let messageType = 'text';
+    let attachments = [];
+    
     if (req.file) {
       messageType = req.file.mimetype.startsWith('image/') ? 'image' : 'file';
+      attachments = [req.file.filename];
     }
 
     const message = new Message({
@@ -79,7 +91,7 @@ export const sendMessage = async (req, res) => {
       receiverType,
       chatId: chat._id,
       content: content || '',
-      attachments: req.file ? [req.file.filename] : [],
+      attachments,
       messageType
     });
 
@@ -95,7 +107,6 @@ export const sendMessage = async (req, res) => {
     // Populate message for response
     await message.populate([
       { path: 'senderId', select: 'name email' },
-      { path: 'receiverId', select: 'name email' }
     ]);
 
     // Emit socket event
@@ -104,8 +115,10 @@ export const sendMessage = async (req, res) => {
       io.to(`chat:${chat._id}`).emit('receiveMessage', message);
       io.to(`user:${targetReceiverId}`).emit('newMessage', {
         chatId: chat._id,
+        senderId: message.senderId,
+        senderName: req.user.name || req.user.username,
         message: message.content || 'Sent an attachment',
-        senderName: req.user.name || req.user.username
+        timestamp: message.createdAt
       });
     }
 

@@ -27,6 +27,11 @@ import UserBookingsPage from './UserBookingsPage';
 import UserReportsPage from './UserReportsPage';
 import UserReviewsPage from './UserReviewsPage';
 import UserProfilePage from './UserProfilePage';
+import PropertyMap from '../../components/PropertyMap';
+import SmartFilters from '../../components/SmartFilters';
+import AIPropertyMatcher from '../../components/AIPropertyMatcher';
+import PropertyRecommendationEngine from '../../components/PropertyRecommendationEngine';
+import RealTimeUpdates from '../../components/RealTimeUpdates';
 import PropertyRecommendations from '../../components/PropertyRecommendations';
 import PropertyAlerts from '../../components/PropertyAlerts';
 import { logoutUser } from '../../../api';
@@ -34,6 +39,8 @@ import { logoutUser } from '../../../api';
 const UserDashboard = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userPreferences, setUserPreferences] = useState(null);
+  const [showMapView, setShowMapView] = useState(false);
+  const [searchHistory, setSearchHistory] = useState([]);
   const { user } = useOutletContext();
   const location = useLocation();
   const navigate = useNavigate();
@@ -47,6 +54,10 @@ const UserDashboard = () => {
         preferredTypes: ['1 Bedroom', '2 Bedroom', 'Studio']
       });
     }
+    
+    // Load search history from localStorage
+    const history = JSON.parse(localStorage.getItem(`search_history_${user._id}`) || '[]');
+    setSearchHistory(history);
   }, [user]);
 
   const handleLogout = async () => {
@@ -191,14 +202,64 @@ const UserDashboard = () => {
                 <Route path="/" element={
                   <div className="space-y-6">
                     <UserDashboardStats user={user} />
+                    <RealTimeUpdates userId={user?._id || user?.id} userType="User" />
+                    <AIPropertyMatcher 
+                      userId={user?._id || user?.id}
+                      userPreferences={userPreferences}
+                      onRecommendationSelect={(rec) => {
+                        toast.success(`Showing properties like: ${rec.title}`);
+                        navigate('/user/dashboard/browse');
+                      }}
+                    />
                     <PropertyRecommendations 
                       userPreferences={userPreferences} 
                       currentLocation={user?.location}
                     />
+                    <PropertyRecommendationEngine
+                      userId={user?._id || user?.id}
+                      userPreferences={userPreferences}
+                      onRecommendationSelect={(rec) => {
+                        navigate('/user/dashboard/browse');
+                      }}
+                    />
                     <PropertyAlerts userId={user?._id || user?.id} />
-                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-green-100 dark:border-gray-700">
-                      <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">Browse Properties</h2>
-                      <UserListingsPage />
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                      <div className="lg:col-span-2">
+                        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 border border-green-100 dark:border-gray-700">
+                          <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Browse Properties</h2>
+                            <button
+                              onClick={() => setShowMapView(!showMapView)}
+                              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                            >
+                              {showMapView ? 'List View' : 'Map View'}
+                            </button>
+                          </div>
+                          {showMapView ? (
+                            <div className="h-96">
+                              <PropertyMap 
+                                listings={[]} 
+                                onPropertySelect={(property) => {
+                                  toast.success(`Selected: ${property.title}`);
+                                }}
+                                className="h-full"
+                              />
+                            </div>
+                          ) : (
+                            <UserListingsPage />
+                          )}
+                        </div>
+                      </div>
+                      <div className="space-y-6">
+                        <SmartFilters 
+                          onFiltersChange={(filters) => {
+                            // Apply smart filters to listings
+                            console.log('Smart filters applied:', filters);
+                          }}
+                          userPreferences={userPreferences}
+                          searchHistory={searchHistory}
+                        />
+                      </div>
                     </div>
                   </div>
                 } />

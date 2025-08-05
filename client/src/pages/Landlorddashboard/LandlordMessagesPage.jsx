@@ -16,7 +16,8 @@ import {
   X,
   User,
   CheckCircle,
-  Circle
+  Circle,
+  Menu
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { getChats, getChatMessages, sendChatMessage, markMessagesAsSeen, getCurrentUser } from '../../../api';
@@ -39,6 +40,8 @@ const LandlordMessagesPage = () => {
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [onlineUsers, setOnlineUsers] = useState(new Set());
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   
   const messagesEndRef = useRef(null);
   const typingTimeoutRef = useRef(null);
@@ -47,6 +50,20 @@ const LandlordMessagesPage = () => {
 
   // Common emojis for quick access
   const commonEmojis = ['😊', '😂', '❤️', '👍', '👎', '😢', '😮', '😡', '🎉', '🔥', '💯', '🏠', '💰', '📍', '✅', '❌'];
+
+  // Check if mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+      if (window.innerWidth < 768) {
+        setShowSidebar(false);
+      }
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const initializeChat = async () => {
@@ -119,8 +136,13 @@ const LandlordMessagesPage = () => {
       fetchMessages(selectedChat._id);
       socketService.joinChat(selectedChat._id);
       markMessagesAsSeen(selectedChat._id);
+      
+      // On mobile, hide sidebar when chat is selected
+      if (isMobile) {
+        setShowSidebar(false);
+      }
     }
-  }, [selectedChat]);
+  }, [selectedChat, isMobile]);
 
   useEffect(() => {
     scrollToBottom();
@@ -157,11 +179,7 @@ const LandlordMessagesPage = () => {
 
     setSendingMessage(true);
     try {
-      const messageData = {
-        chatId: selectedChat._id,
-        receiverId: selectedChat.participant._id,
-        content: newMessage
-      };
+      let response;
 
       // Handle file attachment
       if (selectedFile) {
@@ -171,7 +189,7 @@ const LandlordMessagesPage = () => {
         formData.append('content', newMessage || '');
         formData.append('attachment', selectedFile);
 
-        const response = await fetch('/api/chats/send', {
+        response = await fetch('/api/chats/send', {
           method: 'POST',
           credentials: 'include',
           body: formData
@@ -181,7 +199,13 @@ const LandlordMessagesPage = () => {
         const result = await response.json();
         setMessages(prev => [...prev, result]);
       } else {
-        const response = await sendChatMessage(messageData);
+        const messageData = {
+          chatId: selectedChat._id,
+          receiverId: selectedChat.participant._id,
+          content: newMessage
+        };
+
+        response = await sendChatMessage(messageData);
         setMessages(prev => [...prev, response.data]);
       }
 
@@ -207,12 +231,10 @@ const LandlordMessagesPage = () => {
       setIsTyping(typing);
       
       if (typing) {
-        // Clear existing timeout
         if (typingTimeoutRef.current) {
           clearTimeout(typingTimeoutRef.current);
         }
         
-        // Set new timeout to stop typing
         typingTimeoutRef.current = setTimeout(() => {
           handleTyping(false);
         }, 3000);
@@ -238,7 +260,7 @@ const LandlordMessagesPage = () => {
   const handleFileSelect = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 10 * 1024 * 1024) { // 10MB limit
+      if (file.size > 10 * 1024 * 1024) {
         toast.error('File size must be less than 10MB');
         return;
       }
@@ -304,12 +326,12 @@ const LandlordMessagesPage = () => {
         <DarkModeToggle />
         <div className="p-6">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm h-[calc(100vh-8rem)] flex border border-green-100 dark:border-gray-700">
-            <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 p-3">
+            <div className="w-full md:w-1/3 border-r border-gray-200 dark:border-gray-700 p-3">
               {[...Array(5)].map((_, i) => (
                 <MessageSkeleton key={i} />
               ))}
             </div>
-            <div className="flex-1 flex items-center justify-center">
+            <div className="hidden md:flex flex-1 items-center justify-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500"></div>
             </div>
           </div>
@@ -324,24 +346,49 @@ const LandlordMessagesPage = () => {
       <div className="p-6">
         {/* Header */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm p-6 mb-6 border border-green-100 dark:border-gray-700">
-          <div className="flex items-center gap-4">
-            <button
-              onClick={() => navigate('/landlord/dashboard')}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Messages</h1>
-              <p className="text-gray-600 dark:text-gray-300">Chat with potential tenants</p>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => navigate('/landlord/dashboard')}
+                className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+              >
+                <ArrowLeft className="w-5 h-5" />
+              </button>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Messages</h1>
+                <p className="text-gray-600 dark:text-gray-300">Chat with potential tenants</p>
+              </div>
             </div>
+            {/* Mobile menu toggle */}
+            {isMobile && selectedChat && (
+              <button
+                onClick={() => setShowSidebar(!showSidebar)}
+                className="md:hidden p-2 bg-green-500 text-white rounded-lg"
+              >
+                <Menu className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </div>
 
         {/* Chat Interface */}
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm h-[calc(100vh-12rem)] flex border border-green-100 dark:border-gray-700">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm h-[calc(100vh-12rem)] flex border border-green-100 dark:border-gray-700 relative">
+          {/* Mobile Sidebar Overlay */}
+          {isMobile && showSidebar && (
+            <div 
+              className="absolute inset-0 bg-black bg-opacity-50 z-40"
+              onClick={() => setShowSidebar(false)}
+            />
+          )}
+
           {/* Chats Sidebar */}
-          <div className="w-1/3 border-r border-gray-200 dark:border-gray-700 flex flex-col h-full">
+          <div className={`${
+            isMobile 
+              ? `absolute left-0 top-0 bottom-0 w-80 z-50 transform transition-transform duration-300 ${
+                  showSidebar ? 'translate-x-0' : '-translate-x-full'
+                }`
+              : 'w-1/3'
+          } bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col h-full`}>
             {/* Search */}
             <div className="p-4 border-b border-gray-200 dark:border-gray-700">
               <div className="relative">
@@ -369,7 +416,10 @@ const LandlordMessagesPage = () => {
                   {filteredChats.map((chat) => (
                     <button
                       key={chat._id}
-                      onClick={() => setSelectedChat(chat)}
+                      onClick={() => {
+                        setSelectedChat(chat);
+                        if (isMobile) setShowSidebar(false);
+                      }}
                       className={`w-full p-4 rounded-xl text-left transition-colors ${
                         selectedChat?._id === chat._id
                           ? 'bg-green-100 dark:bg-green-900/30 border border-green-200 dark:border-green-700'
@@ -423,12 +473,25 @@ const LandlordMessagesPage = () => {
           </div>
 
           {/* Chat Area */}
-          <div className="flex-1 flex flex-col h-full">
+          <div className={`${isMobile && showSidebar ? 'hidden' : 'flex'} flex-1 flex-col h-full`}>
             {selectedChat ? (
               <>
                 {/* Chat Header */}
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+                <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <div className="flex items-center gap-3">
+                    {/* Mobile back button */}
+                    {isMobile && (
+                      <button
+                        onClick={() => {
+                          setSelectedChat(null);
+                          setShowSidebar(true);
+                        }}
+                        className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors md:hidden"
+                      >
+                        ←
+                      </button>
+                    )}
+                    
                     <div className="relative">
                       <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
                         <span className="text-white font-semibold">
@@ -471,7 +534,7 @@ const LandlordMessagesPage = () => {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4">
                   {messages.length === 0 ? (
                     <div className="text-center text-gray-500 dark:text-gray-400 mt-8">
                       <MessageSquare className="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-gray-500" />
@@ -570,7 +633,7 @@ const LandlordMessagesPage = () => {
                 </div>
 
                 {/* Message Input */}
-                <div className="p-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="p-4 md:p-6 border-t border-gray-200 dark:border-gray-700">
                   {/* File preview */}
                   {selectedFile && (
                     <div className="mb-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg flex items-center justify-between">
@@ -593,7 +656,7 @@ const LandlordMessagesPage = () => {
                   {/* Emoji picker */}
                   {showEmojiPicker && (
                     <div className="mb-3 p-3 bg-white dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600 shadow-lg">
-                      <div className="grid grid-cols-8 gap-2">
+                      <div className="grid grid-cols-8 md:grid-cols-8 gap-2">
                         {commonEmojis.map((emoji, index) => (
                           <button
                             key={index}
@@ -635,7 +698,7 @@ const LandlordMessagesPage = () => {
                     </div>
                   )}
 
-                  <form onSubmit={handleSendMessage} className="flex gap-3">
+                  <form onSubmit={handleSendMessage} className="flex gap-2 md:gap-3">
                     {/* Hidden file input */}
                     <input
                       ref={fileInputRef}
@@ -649,9 +712,9 @@ const LandlordMessagesPage = () => {
                     <button
                       type="button"
                       onClick={() => setShowAttachmentMenu(!showAttachmentMenu)}
-                      className="p-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                      className="p-2 md:p-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
                     >
-                      <Paperclip className="w-5 h-5" />
+                      <Paperclip className="w-4 h-4 md:w-5 md:h-5" />
                     </button>
 
                     <input
@@ -659,7 +722,7 @@ const LandlordMessagesPage = () => {
                       value={newMessage}
                       onChange={handleInputChange}
                       placeholder="Type your message..."
-                      className="flex-1 px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="flex-1 px-3 md:px-4 py-2 md:py-3 border border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       disabled={sendingMessage}
                     />
 
@@ -667,20 +730,20 @@ const LandlordMessagesPage = () => {
                     <button
                       type="button"
                       onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-                      className="p-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
+                      className="p-2 md:p-3 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-colors"
                     >
-                      <Smile className="w-5 h-5" />
+                      <Smile className="w-4 h-4 md:w-5 md:h-5" />
                     </button>
 
                     <button
                       type="submit"
                       disabled={sendingMessage || (!newMessage.trim() && !selectedFile)}
-                      className="bg-green-500 text-white p-3 rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-green-500 text-white p-2 md:p-3 rounded-xl hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {sendingMessage ? (
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <div className="w-4 h-4 md:w-5 md:h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <Send className="w-5 h-5" />
+                        <Send className="w-4 h-4 md:w-5 md:h-5" />
                       )}
                     </button>
                   </form>
@@ -692,6 +755,14 @@ const LandlordMessagesPage = () => {
                   <MessageSquare className="w-16 h-16 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
                   <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-2">Select a conversation</h3>
                   <p className="text-gray-600 dark:text-gray-300">Choose a conversation from the sidebar to start messaging</p>
+                  {isMobile && (
+                    <button
+                      onClick={() => setShowSidebar(true)}
+                      className="mt-4 bg-green-500 text-white px-4 py-2 rounded-lg"
+                    >
+                      View Conversations
+                    </button>
+                  )}
                 </div>
               </div>
             )}
